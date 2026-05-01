@@ -15,28 +15,28 @@ public class PostProcess : IPostprocessBuildWithReport
         string buildFolder = Path.GetDirectoryName(report.summary.outputPath);
 
         // Define your source files
-        string parameterFile = Path.Combine(Directory.GetCurrentDirectory(), "parameters.txt");  // The ".." makes us go one folder above the data folder, which is where the application exe is
+        //string parameterFile = Path.Combine(Directory.GetCurrentDirectory(), "parameters.txt");  // The ".." makes us go one folder above the data folder, which is where the application exe is
         string trialFolder = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "PhaseParams");
         //Path.Combine(Application.dataPath, "Parameters", "file1.txt");
         // Define the target destination (build folder)
-        string paramFileDest = Path.Combine(buildFolder, "parameters.txt");
+        //string paramFileDest = Path.Combine(buildFolder, "parameters.txt");
         string trialFolderDest = Path.Combine(buildFolder, "PhaseParams");
 
         // Copy files if they exist
         try
         {
-            if (File.Exists(parameterFile))
-                File.Copy(parameterFile, paramFileDest, overwrite: true);
-            else
-                Debug.LogWarning($"Source file not found: {parameterFile}");
+            //if (File.Exists(parameterFile))
+            //    File.Copy(parameterFile, paramFileDest, overwrite: true);
+            //else
+            //    Debug.LogWarning($"Source file not found: {parameterFile}");
 
             if (Directory.Exists(trialFolder))
             {
                 CopyDirectory(trialFolder, trialFolderDest);
-                Debug.Log("Folder copied successfully.");
+                Debug.Log("Session parameter folder copied successfully.");
             }
             else
-                Debug.LogWarning($"Source file not found: {trialFolder}");
+                Debug.LogWarning($"Source folder not found: {trialFolder}");
 
             Debug.Log("Parameter files copied successfully to the build folder.");
         }

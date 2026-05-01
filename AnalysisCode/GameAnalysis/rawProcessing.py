@@ -73,8 +73,8 @@ def version_atleast(currVersion, targetVersion):
 
 # analyze all
 # get all session data files
-rawFolder = 'D:\\Rouse\\My Documents\\GitHub\\RhythmGame\\AnalysisCode\\GameAnalysis\\temp'
-outputFolder = 'D:\\Rouse\\My Documents\\GitHub\\RhythmGame\\AnalysisCode\\GameAnalysis\\OutputTemp'
+rawFolder = 'D:\\Rouse\\My Documents\\GitHub\\RhythmGame\\AnalysisCode\\GameAnalysis\\Input'
+outputFolder = 'D:\\Rouse\\My Documents\\GitHub\\RhythmGame\\AnalysisCode\\GameAnalysis\\Output'
 
 allData = pd.DataFrame()
 allTaps = pd.DataFrame()
@@ -319,8 +319,6 @@ for subject in subjectList:
                         # # Now that we have ticks and taps, get tap angles
                         # get_angles() assumes that interval before the first beat is the same as the first interval
                         [closeTicks, angles] = get_angles(tempTickTimes, tempTapTimes)
-                        if i == 14:
-                            pass
 
                     # np.ravel is required because sometimes closeTicks is ndarray and sometimes a single float
                     # extend() only works on iterables, and append() adds as a single item

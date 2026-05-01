@@ -6,6 +6,7 @@ using UnityEngine;
 public class ParameterLoader : MonoBehaviour
 {
     // Last modified: 12/20/24 (AR) Adjusted the session parameter file to be in the Session Parameter folder of the data directory
+    // Last modified: 12/17/25 (AR) Session parameters relocated to PlayerPrefs variable
     
     [System.Serializable]
     public class TrialParameters
@@ -22,6 +23,7 @@ public class ParameterLoader : MonoBehaviour
     public string AnimalName;
     public string ExperimenterName;
     public string SavePath;
+    public string ParamPath;
     public float LRSDuration;
     public int LRSThresh;
     public float targetZoneWidth;
@@ -34,33 +36,37 @@ public class ParameterLoader : MonoBehaviour
     {
         // Call the function to load parameters from the file
         //Debug.Log("Starting file load!");
-        LoadSessionParameters("parameters.txt");
+        //LoadSessionParameters("parameters.txt");
+    }
+
+    public void SetPhaseParamPath(string folderPath)
+    {
+        if (folderPath == null)
+        {
+            ParamPath = Application.dataPath;
+        } else
+        {
+            ParamPath = folderPath;
+        }
     }
 
     public void LoadTrialParameters(string fileName)
     {
 
         string filePath;
-        //filePath = Path.Combine(Application.dataPath, "..", "PhaseParams", fileName);
+
 #if UNITY_EDITOR
         // In the Editor, look for the file in the project root
         filePath = Path.Combine(Application.dataPath, "PhaseParams", fileName);
-        //filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
 #else
-            // In a built game, look for the file in the build directory
-            filePath = Path.Combine(Application.dataPath, "..", "PhaseParams", fileName); // The ".." makes us go one folder above the data folder, which is where the application exe is
+        // In a built game, look for the file in the build directory
+        filePath = Path.Combine(ParamPath, fileName);
 #endif
 
         if (!File.Exists(filePath))
         {
             Debug.LogError("Trial parameter file not found at: " + filePath);
-
-            // Let user select new parameter file
-            //string path = EditorUtility.OpenFilePanel("Select trial parameter file", "", "txt");
-            //if (path.Length != 0)
-            //{
-            //    filePath = path;
-            //}
         }
 
         if (File.Exists(filePath))
@@ -154,7 +160,7 @@ public class ParameterLoader : MonoBehaviour
             filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 #else
             // In a built game, look for the file in the build directory
-            filePath = Path.Combine(Application.dataPath, "..", fileName);
+            filePath = Path.Combine(Application.dataPath, "..", "..", fileName);
 #endif
 
 
@@ -162,7 +168,7 @@ public class ParameterLoader : MonoBehaviour
         {
             Debug.LogError("Session parameter file not found at: " + filePath);
 
-            //// Let user select new parameter file
+            // Let user select new parameter file
             //string path = EditorUtility.OpenFilePanel("Select session parameter file", "", "txt");
             //if (path.Length != 0)
             //{
@@ -206,6 +212,10 @@ public class ParameterLoader : MonoBehaviour
                     else if (variableName == "Target Zone Width")
                     {
                         float.TryParse(value, out targetZoneWidth);
+                    }
+                    else if (variableName == "Save Path")
+                    {
+                        SavePath = value;
                     }
                 }
             }

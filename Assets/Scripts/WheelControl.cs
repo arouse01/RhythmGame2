@@ -78,7 +78,7 @@ public class WheelControl : MonoBehaviour
         pause = true;
         // Place event boxes first because their size/position is linked to the wheel size/position, so resizing the wheel after will resize the event boxes
         PlaceEventBoxes();
-        boxes = FindObjectsOfType<EventBox>();
+        boxes = FindObjectsByType<EventBox>(FindObjectsSortMode.None);  // Updated from FindObjectsOfType (now deprecated)
         Resize();
         transform.rotation = Quaternion.identity;  // Reset wheel position to zero  
         float startAngle;

@@ -6,6 +6,7 @@ using TMPro;
 using System.IO;
 using UnityEngine.InputSystem;
 using TimeUtil = UnityEngine.Time;
+using SimpleFileBrowser;
 
 /*
 Sounds:
@@ -38,17 +39,25 @@ public class GameController : MonoBehaviour
     public TextMeshProUGUI versionText;
 
     public GameObject UserInputObject;
-    public GameObject gameOverPanel;
-    public GameObject playerInfoField;
-    public GameObject attentionField;
-    public GameObject postNotesField;
+    private GameObject preGamePanel; 
+    private GameObject AnimalField;
+    private GameObject preNotesField;
 
-    public GameObject preGamePanel;
-    public GameObject AnimalField;
-    public GameObject preNotesField;
-    public GameObject LRSDurationField;
-    public GameObject TargetWidthField;
+    private GameObject prefsPanel;
+    private GameObject PhaseParamFolderField;
+    private string PhaseParamFolder;
+    private GameObject SaveFolderField;
+    private string SaveFolder;
+    private GameObject LRSDurationField; 
+    private GameObject TargetWidthField;
+    private GameObject prefsButton;
+    private GameObject prefWarningText;
 
+    private GameObject gameOverPanel;
+    private GameObject playerInfoField;
+    private GameObject attentionField;
+    private GameObject postNotesField;
+    
     public GameObject InGameText;
     private TextMeshProUGUI scoreText;
     private TextMeshProUGUI messageText;
@@ -124,6 +133,28 @@ public class GameController : MonoBehaviour
         //eventCount = 0;
         //booped = false;
         //pause = false;
+        //// Get layout objects
+        // preGamePanel
+        preGamePanel = UserInputObject.transform.Find("InputPanels/SetupPanel").gameObject;
+        AnimalField = preGamePanel.transform.Find("UserInputPre/AnimalNameRow/AnimalNameField").gameObject;
+        preNotesField = preGamePanel.transform.Find("UserInputPre/PreNotesRow/PreNotesField").gameObject;
+
+        // prefsPanel
+        prefsPanel = UserInputObject.transform.Find("InputPanels/PrefsPanel").gameObject;
+        PhaseParamFolderField = prefsPanel.transform.Find("UserInputPrefs/PhaseParamFolderRow/PhaseParamFolderField").gameObject;
+        SaveFolderField = prefsPanel.transform.Find("UserInputPrefs/SaveFolderRow/SaveFolderField").gameObject;
+        LRSDurationField = prefsPanel.transform.Find("UserInputPrefs/OtherFieldsRow/LRSDurField").gameObject;
+        TargetWidthField = prefsPanel.transform.Find("UserInputPrefs/OtherFieldsRow/TargetSizeField").gameObject;
+        prefsButton = UserInputObject.transform.Find("BottomText/PrefsButton").gameObject;
+        prefWarningText = prefsPanel.transform.Find("UserInputPrefs/WarningTextRow/PrefWarningText").gameObject;
+
+        // 
+        gameOverPanel = UserInputObject.transform.Find("InputPanels/EndPanel").gameObject;
+        playerInfoField = gameOverPanel.transform.Find("UserInputEnd/PlayerInfoRow/PlayerInfoField").gameObject;
+        attentionField = gameOverPanel.transform.Find("UserInputEnd/AttentionRow/AttentionField").gameObject;
+        postNotesField = gameOverPanel.transform.Find("UserInputEnd/PostNotesRow/PostNotesField").gameObject;
+
+        // in-game text
         scoreText = InGameText.transform.Find("Score Text").GetComponent<TextMeshProUGUI>();
         messageText = InGameText.transform.Find("Message Text").GetComponent<TextMeshProUGUI>();
         statsText = InGameText.transform.Find("LevelStats Text").GetComponent<TextMeshProUGUI>();
@@ -133,9 +164,6 @@ public class GameController : MonoBehaviour
         Life3Marker = lifeMarkers.transform.Find("Life 3").GetComponent<TextMeshProUGUI>();
         levelScoreObject = InGameText.transform.Find("Level Score").gameObject;
         audioSource = GetComponent<AudioSource>();
-        parameters.LoadSessionParameters("parameters.txt");
-        LRSDurationField.GetComponent<TMPro.TMP_InputField>().text = parameters.LRSDuration.ToString();
-        TargetWidthField.GetComponent<TMPro.TMP_InputField>().text = parameters.targetZoneWidth.ToString();
         Wheel.gameObject.SetActive(false);
         Target.gameObject.SetActive(false);
 
@@ -165,89 +193,257 @@ public class GameController : MonoBehaviour
         gameOverPanel.SetActive(false);
         UserInputObject.SetActive(true);
         preGamePanel.SetActive(true);
+        prefsButton.SetActive(true);
+        prefsPanel.SetActive(false);
         InGameText.SetActive(false);
     }
 
+    public void OpenPrefs()
+    {
+        //parameters.LoadSessionParameters("parameters.txt");
+        PhaseParamFolderField.GetComponent<TMPro.TMP_InputField>().text = PlayerPrefs.GetString("PhaseParamFolder");
+        SaveFolderField.GetComponent<TMPro.TMP_InputField>().text = PlayerPrefs.GetString("SaveFolder");
+        LRSDurationField.GetComponent<TMPro.TMP_InputField>().text = PlayerPrefs.GetFloat("LRSDuration").ToString();
+        TargetWidthField.GetComponent<TMPro.TMP_InputField>().text = PlayerPrefs.GetFloat("TargetWidth").ToString();
+
+        // clear any highlighting
+        PhaseParamFolderField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+        SaveFolderField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+        LRSDurationField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+        TargetWidthField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+
+        preGamePanel.SetActive(false); 
+        prefsPanel.SetActive(true);
+        prefsButton.SetActive(false);
+
+        prefWarningText.GetComponent<TMPro.TMP_Text>().text = "";
+
+    }
+
+    public void SavePrefs()
+    {
+        PlayerPrefs.SetString("PhaseParamFolder", PhaseParamFolderField.GetComponent<TMPro.TMP_InputField>().text);
+        PlayerPrefs.SetString("SaveFolder", SaveFolderField.GetComponent<TMPro.TMP_InputField>().text);
+        PlayerPrefs.SetFloat("LRSDuration", float.Parse(LRSDurationField.GetComponent<TMPro.TMP_InputField>().text));
+        PlayerPrefs.SetFloat("TargetWidth", float.Parse(TargetWidthField.GetComponent<TMPro.TMP_InputField>().text));
+
+        // check prefs
+        if (CheckPrefs())
+        {
+            prefsPanel.SetActive(false);
+            preGamePanel.SetActive(true);
+            prefsButton.SetActive(true);
+        }
+        
+    }
+
+    public void ClosePrefs()
+    {
+        prefsPanel.SetActive(false);
+        preGamePanel.SetActive(true);
+        prefsButton.SetActive(true);
+    }
+
+    public void SetPhaseParamFolder()
+    {
+        StartCoroutine(ShowLoadDialogCoroutine("phase"));
+        
+    }
+
+    public void SetSaveFolder()
+    {
+        StartCoroutine(ShowLoadDialogCoroutine("save"));
+    }
+
+    IEnumerator ShowLoadDialogCoroutine(string whichField)
+    {
+        // Show a load file dialog and wait for a response from user
+        // Load file/folder: file, Allow multiple selection: true
+        // Initial path: default (Documents), Initial filename: empty
+        // Title: "Load File", Submit button text: "Load"
+        yield return FileBrowser.WaitForLoadDialog(FileBrowser.PickMode.Folders, false, null, null, "Select Files", "Load");
+
+        // Dialog is closed
+
+        if (FileBrowser.Success)
+            if (whichField == "phase")
+            {
+                PhaseParamFolderField.GetComponent<TMPro.TMP_InputField>().text = FileBrowser.Result[0];
+            } else if (whichField == "save")
+            {
+                SaveFolderField.GetComponent<TMPro.TMP_InputField>().text = FileBrowser.Result[0];
+            }
+    }
+
+    public bool CheckPrefs()
+    {
+        // Validate all required preferences, return false if at least one is unset or invalid
+        bool Success = true;
+        string warningText;
+        // if LRSDuration is 0 or unset
+        // if targetZoneWidth is 0 or unset
+        // if sessionFile is not found
+        // if savePath is unset or not found
+
+        // First check if any fields are invalid overall (so we can go to prefs layout first)
+        if (!System.IO.Directory.Exists(PlayerPrefs.GetString("PhaseParamFolder")) || 
+            !System.IO.Directory.Exists(PlayerPrefs.GetString("SaveFolder")) ||
+            PlayerPrefs.GetFloat("LRSDuration") <= 0 ||
+            PlayerPrefs.GetFloat("TargetWidth") <= 0)
+        {
+            Success = false;
+
+            if (!prefsPanel.activeSelf)
+            {
+                // if prefs panel is not active, activate it
+                OpenPrefs();
+            }
+            warningText = "Warning: Missing/Invalid preferences";
+            prefWarningText.GetComponent<TMPro.TMP_Text>().text = warningText;
+        }
+
+        if (!Success)
+        {
+            // highlight the erroneous fields
+            if (!System.IO.Directory.Exists(PlayerPrefs.GetString("PhaseParamFolder")))
+            {
+                PhaseParamFolderField.GetComponent<Image>().color = new Color(1f, 1f, 0.5f, 1f);
+            }
+            else
+            {
+                PhaseParamFolderField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+            }
+            
+            if (!System.IO.Directory.Exists(PlayerPrefs.GetString("SaveFolder")))
+            {
+                SaveFolderField.GetComponent<Image>().color = new Color(1f, 1f, 0.5f, 1f);
+            }
+            else
+            {
+                SaveFolderField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+            }
+            
+            if (PlayerPrefs.GetFloat("LRSDuration") <= 0)
+            {
+                LRSDurationField.GetComponent<Image>().color = new Color(1f, 1f, 0.5f, 1f);
+            }
+            else
+            {
+                LRSDurationField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+            }
+            if (PlayerPrefs.GetFloat("TargetWidth") <= 0)
+            {
+                TargetWidthField.GetComponent<Image>().color = new Color(1f, 1f, 0.5f, 1f);
+            }
+            else
+            {
+                TargetWidthField.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+            }
+        }
+        
+        if (!Success)
+        {
+            // go to prefsPanel
+            preGamePanel.SetActive(false);
+            prefsPanel.SetActive(true);
+            prefsButton.SetActive(false);
+        }
+
+        return Success;
+    }
+    
     public void StartSession(string sessionFile)
     {
         string AnimalName = AnimalField.GetComponent<TMP_InputField>().text;
         //string attentionText = attentionField.GetComponent<TMP_InputField>().text;
         string preNotesText = preNotesField.GetComponent<TMP_InputField>().text;
-
-        //string AnimalName = parameters.AnimalName;
-
-        preGamePanel.SetActive(false);
-        UserInputObject.SetActive(false);
-        InGameText.SetActive(true);
-
-        Wheel.gameObject.SetActive(true);
-        Target.gameObject.SetActive(true);
-
-        // read parameter file
-        parameters.LoadTrialParameters(sessionFile);
-        parameters.AnimalName = AnimalName;
-        // Get number of trials
-        numTrials = parameters.trials.Length;
-
-        currTrial = 0;
-
+        string phaseParamPath = PlayerPrefs.GetString("PhaseParamFolder");
+        string savePath = PlayerPrefs.GetString("SaveFolder");
         // LRSDuration = parameters.LRSDuration;
-        LRSDuration = float.Parse(LRSDurationField.GetComponent<TMPro.TMP_InputField>().text);
+        LRSDuration = PlayerPrefs.GetFloat("LRSDuration");
         //LRSThresh = parameters.LRSThresh;
-        //targetZoneWidth = float.Parse(TargetWidthField.GetComponent<TMPro.TMP_InputField>().text);
-        targetZoneWidth = parameters.targetZoneWidth;
+        targetZoneWidth = PlayerPrefs.GetFloat("TargetWidth");
 
-        Target.targetZoneWidth = targetZoneWidth;
-
-        sessionNumber = System.Text.RegularExpressions.Regex.Replace(sessionFile, "[^0-9]", "");
-        //Target.InitializeTarget();
-
-        //// create log file
-        System.DateTime currentTime = System.DateTime.Now;
-        string currDate = currentTime.ToString("yyyyMMddHHmmss");
-
-        //// Format the date and time to include milliseconds
-        //string timeWithMilliseconds = currentTime.ToString("yyyy-MM-dd HH:mm:ss.fff");
-
-        string logFileName = parameters.AnimalName + "_" + currDate + ".txt";
-        string logFileFolder = Path.Combine(Application.dataPath, "SessionData", parameters.AnimalName);
-        logFilePath = Path.Combine(logFileFolder, logFileName);
-        if (!Directory.Exists(logFileFolder))
+        //// Check that parameters have been set
+        // if LRSDuration is 0 or unset
+        // if targetZoneWidth is 0 or unset
+        // if phaseParamPath is unset or not found
+        // if sessionFile is not found
+        // if savePath is unset or not found
+        if (CheckPrefs())
         {
-            Directory.CreateDirectory(logFileFolder);
+            Target.targetZoneWidth = targetZoneWidth;
+
+            preGamePanel.SetActive(false);
+            UserInputObject.SetActive(false);
+            InGameText.SetActive(true);
+
+            Wheel.gameObject.SetActive(true);
+            Target.gameObject.SetActive(true);
+
+            // read parameter file
+            parameters.SetPhaseParamPath(phaseParamPath);
+            parameters.LoadTrialParameters(sessionFile);
+            //parameters.AnimalName = AnimalName;
+            // Get number of trials
+            numTrials = parameters.trials.Length;
+
+            currTrial = 0;
+
+            sessionNumber = System.Text.RegularExpressions.Regex.Replace(sessionFile, "[^0-9]", "");
+            //Target.InitializeTarget();
+
+            //// create log file
+            System.DateTime currentTime = System.DateTime.Now;
+            string currDate = currentTime.ToString("yyyyMMddHHmmss");
+
+            //// Format the date and time to include milliseconds
+            //string timeWithMilliseconds = currentTime.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+            string logFileName = AnimalName + "_" + currDate + ".txt";
+            // Detect system to determine where to put log folder
+
+            string logFileFolder = Path.Combine(savePath, AnimalName);
+            logFilePath = Path.Combine(logFileFolder, logFileName);
+            if (!Directory.Exists(logFileFolder))
+            {
+                Directory.CreateDirectory(logFileFolder);
+            }
+            EventLogger.SetLogFilePath(logFilePath);
+            EventLogger.StartLog();
+            EventLogger.LogEvent("Game", "Version", Application.version);
+            EventLogger.LogEvent("Game", "Fixed Timestep Precise", timeStepPrecise.ToString());
+            float fixedTimestep = TimeUtil.fixedDeltaTime;
+            EventLogger.LogEvent("Game", "Fixed Timestep Slow", fixedTimestep.ToString());
+            EventLogger.LogEvent("Session", "Animal", AnimalName);
+            //EventLogger.LogEvent("Session", "Attention", attentionText);
+            EventLogger.LogEvent("Session", "Presession Notes", preNotesText);
+            EventLogger.LogEvent("Session", "LRS Duration", LRSDuration.ToString());
+            EventLogger.LogEvent("Session", "Target Width", targetZoneWidth.ToString());
+
+            EventLogger.LogEvent("Session", "Phase", sessionNumber);
+            string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            EventLogger.LogEvent("Session", "Session Start", timestamp);
+
+            score = 0;
+            trialIsRunning = false;
+            eventCount = 0;
+            booped = false;
+            pause = false;
+
+            defaultLives = 3;
+
+            levelScoreObject.SetActive(false);
+            lifeMarkers.SetActive(false);
+
+            messageText.SetText("Click to start<br>Phase " + sessionNumber);
+            statsText.SetText(""); // clear statsText because no trials have been run yet
+            Wheel.StopSpin();
+
+            ActivateInputs();
         }
-        EventLogger.SetLogFilePath(logFilePath);
-        EventLogger.StartLog();
-        EventLogger.LogEvent("Game", "Version", Application.version);
-        EventLogger.LogEvent("Game", "Fixed Timestep Precise", timeStepPrecise.ToString());
-        float fixedTimestep = TimeUtil.fixedDeltaTime;
-        EventLogger.LogEvent("Game", "Fixed Timestep Slow", fixedTimestep.ToString());
-        EventLogger.LogEvent("Session", "Animal", AnimalName);
-        //EventLogger.LogEvent("Session", "Attention", attentionText);
-        EventLogger.LogEvent("Session", "Presession Notes", preNotesText);
-        EventLogger.LogEvent("Session", "LRS Duration", LRSDuration.ToString());
-        EventLogger.LogEvent("Session", "Target Width", targetZoneWidth.ToString());
 
-        EventLogger.LogEvent("Session", "Phase", sessionNumber);
-        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogEvent("Session", "Session Start", timestamp);
-
-        score = 0;
-        trialIsRunning = false;
-        eventCount = 0;
-        booped = false;
-        pause = false;
-
-        defaultLives = 3;
-
-        levelScoreObject.SetActive(false);
-        lifeMarkers.SetActive(false);
-
-        messageText.SetText("Click to start<br>Phase " + sessionNumber);
-        statsText.SetText(""); // clear statsText because no trials have been run yet
-        Wheel.StopSpin();
-
-        ActivateInputs();
+        
     }
 
     void StartTrial()
@@ -350,6 +546,7 @@ public class GameController : MonoBehaviour
         gameOverStarted = true;
         UserInputObject.SetActive(true);
         gameOverPanel.SetActive(true);
+        prefsButton.SetActive(false);
         Wheel.gameObject.SetActive(false);
         Target.gameObject.SetActive(false);
     }

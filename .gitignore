@@ -76,3 +76,6 @@ crashlytics-build.properties
 
 /[Aa]nalysisCode/[Gg]ame[Aa]nalysis/[Oo]utput/*
 /[Aa]nalysisCode/[Gg]ame[Aa]nalysis/[Ii]nput/*
+
+# TMP Extras folder (unused)
+/Assets/TextMesh Pro/Examples & Extras
