@@ -1,0 +1,4 @@
+Animal = Test
+LRS Duration = 1.5
+LRS Thresh = -3
+Target Zone Width = 0.25
