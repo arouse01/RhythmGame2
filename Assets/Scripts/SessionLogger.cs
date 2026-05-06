@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 
 public class EventLogger
 {
-    
+    // central handler for logging session events
 
     private static string logFilePath = Application.dataPath + "/EventLog.txt";
     private static ConcurrentQueue<string> logQueue = new();

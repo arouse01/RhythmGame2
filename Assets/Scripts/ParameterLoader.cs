@@ -50,7 +50,7 @@ public class ParameterLoader : MonoBehaviour
         }
     }
 
-    public void LoadTrialParameters(string fileName)
+    public void LoadWheelTrialParameters(string fileName)
     {
 
         string filePath;
