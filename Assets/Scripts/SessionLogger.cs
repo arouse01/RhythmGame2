@@ -1,12 +1,13 @@
 //using System.Collections;
 //using System.Collections.Generic;
-using UnityEngine;
+using System;
+using System.Collections.Concurrent;
 using System.IO;
-//using System;
-using TimeUtil = UnityEngine.Time;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
+using UnityEngine;
+using System.Linq;
+using TimeUtil = UnityEngine.Time;
 
 public class EventLogger
 {
@@ -52,95 +53,49 @@ public class EventLogger
     public static void StopLog()
     {
         cts.Cancel();  // Signal the background task to stop
-        logTask?.Wait();  // Ensure it finishes before exiting
+        try
+        {
+            logTask?.Wait();  // Ensure it finishes before exiting
+        }
+        catch (TaskCanceledException)
+        {
+            // expected during shutdown
+        }
+        catch (AggregateException ex) when (
+            ex.InnerExceptions.All(e => e is TaskCanceledException))
+        {
+            // Expected during shutdown
+        }
+
     }
 
     private static async Task ProcessQueue()
     {
         //isLogging = true;
 
-        while (!cts.Token.IsCancellationRequested)
+        try
         {
-            while (logQueue.TryDequeue(out string logEntry))
+            while (true)
             {
-                await File.AppendAllTextAsync(logFilePath, logEntry + "\n");
-                //await Task.Delay(5); // Prevents overwhelming file I/O
+                while (logQueue.TryDequeue(out string logEntry))
+                {
+                    await File.AppendAllTextAsync(logFilePath, logEntry + "\n");
+                    //await Task.Delay(5); // Prevents overwhelming file I/O
+                }
+
+                //isLogging = false;
+                await Task.Delay(10, cts.Token);  // added cts.Token so it will quit if receiving the cancel signal, so added the try() and final log writing bit below
             }
         }
-        //isLogging = false;
-        await Task.Delay(10);
+        catch (TaskCanceledException)
+        {
+            // Expected on shutdown
+        }
+
+        // Final flush after cancellation
+        while (logQueue.TryDequeue(out string logEntry))
+        {
+            await File.AppendAllTextAsync(logFilePath, logEntry + "\n");
+        }
     }
-
 }
-
-//// https://discussions.unity.com/t/building-an-accurate-clock-that-will-stay-accurate-over-time/917706/22
-//public class ReliableTime : MonoBehaviour
-//{
-
-//    [SerializeField][Range(0f, 100f)] float _timeScale = 1f;
-
-//    private const int SIXTY = 60;
-//    private const double TOLERANCE = 1E-2;
-
-//    static ReliableTime _instance;
-//    static public ReliableTime Instance => _instance;
-
-//    float _lastTime;  // in seconds
-//    float _measTime;  // in seconds
-//    int _minRegister; // in minutes
-
-//    public float Time => SIXTY * _minRegister + _measTime;
-//    public double TimeAsDouble => SIXTY * (double)_minRegister + (double)_measTime;
-
-//    public (int h, int m, float s) GetTime()
-//      => ((int)(_minRegister / (float)SIXTY),
-//           _minRegister % SIXTY,
-//           _measTime);
-
-//    void Awake()
-//    {
-//        _instance = this;
-//        setValues(TimeUtil.timeAsDouble);
-//        _lastTime = _measTime;
-//    }
-
-//    void setValues(double absTime)
-//    {
-//        _measTime = (float)(absTime % SIXTY);
-//        _minRegister = (int)(absTime / SIXTY);
-//    }
-
-//    void Update()
-//    {
-//        TimeUtil.timeScale = _timeScale;
-
-//        _measTime += TimeUtil.deltaTime;
-
-//        if (Math.Abs(_measTime - _lastTime) >= 1f)
-//        {
-//            _lastTime = Mathf.Floor(_measTime);
-
-//            if (_timeScale <= 1f)
-//            {
-//                var time = GetTime();
-//                Debug.Log($"{time.h}:{time.m}:{time.s:F3}");
-//            }
-
-//            var measured = TimeAsDouble;
-//            var lapsed = TimeUtil.timeAsDouble;
-
-//            if (Math.Abs(measured - lapsed) > TOLERANCE)
-//            {
-//                var next = (measured + lapsed) / 2f;
-//                Debug.Log($"correction: was {measured:F4} now {next:F4}");
-//                setValues(next);
-//            }
-
-//            if (_measTime >= SIXTY)
-//            {
-//                _measTime -= SIXTY;
-//                _minRegister++;
-//            }
-//        }
-//    }
-//}

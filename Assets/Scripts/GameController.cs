@@ -1,4 +1,5 @@
 ﻿using SimpleFileBrowser;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -35,8 +36,6 @@ public class GameController : MonoBehaviour
     public event System.Action OnGamePause;
     public event System.Action OnGameResume;
 
-    public string GameType;
-
     public float timeStepPrecise;
     public float timeStepSlow = 0.02f;
     
@@ -53,7 +52,7 @@ public class GameController : MonoBehaviour
     private GameObject preNotesField;
 
     //private WheelSession wheelSession;
-    public string levelParameterFile;
+    
 
     private GameObject prefsPanel;
     private GameObject PhaseParamFolderField;
@@ -69,13 +68,20 @@ public class GameController : MonoBehaviour
     private GameObject playerInfoField;
     private GameObject attentionField;
     private GameObject postNotesField;
-    
+
+    [SerializeField] private TMP_Dropdown gameDropdown;
+    [SerializeField] private TMP_Dropdown levelDropdown;
+    private string GameType;
+    public string levelParameterFile;
+    private List<LevelMetadata> availableLevels;
+
     public GameObject InGameText;
     private TextMeshProUGUI scoreText;
     private TextMeshProUGUI messageText;
     private TextMeshProUGUI statsText;
     private GameObject levelScoreObject;
     private GameObject lifeMarkers;
+
     public ParameterLoader parameters;
 
     //public AudioClip bridgeSound;
@@ -124,7 +130,7 @@ public class GameController : MonoBehaviour
     private TextMeshProUGUI Life2Marker;
     private TextMeshProUGUI Life3Marker;
 
-    private static string logFilePath = Application.dataPath + "/Data/EventLog.txt";
+    //private static string logFilePath = Application.dataPath + "/Data/EventLog.txt";
 
     public InputActionAsset inputActions;
     //private InputAction triggerAction;
@@ -164,6 +170,8 @@ public class GameController : MonoBehaviour
         preGamePanel = UserInputObject.transform.Find("InputPanels/SetupPanel").gameObject;
         AnimalField = preGamePanel.transform.Find("UserInputPre/AnimalNameRow/AnimalNameField").gameObject;
         preNotesField = preGamePanel.transform.Find("UserInputPre/PreNotesRow/PreNotesField").gameObject;
+        //gameDropdown = preGamePanel.transform.Find("UserInputPre/GameSelectRow/GameSelectDropdown").gameObject;
+        //levelDropdown = preGamePanel.transform.Find("UserInputPre/GameSelectRow/LevelSelectDropdown").gameObject;
 
         // prefsPanel
         prefsPanel = UserInputObject.transform.Find("InputPanels/PrefsPanel").gameObject;
@@ -195,6 +203,15 @@ public class GameController : MonoBehaviour
 
         //beatZoneColorFade = beatZoneColorDefault;
         //beatZoneColorFade.a = .5f;
+
+        // load game and level choices from last selection
+        
+        //parameters.SetPhaseParamPath(phaseParamPath);
+        //OnGameDropdownChanged(PlayerPrefs.GetInt("GameTypeIndex"));
+        OnGameDropdownChanged(0);
+        OnLevelDropdownChanged(0);
+        gameDropdown.onValueChanged.AddListener(OnGameDropdownChanged);
+        levelDropdown.onValueChanged.AddListener(OnLevelDropdownChanged);
 
 
         MainMenuStart();
@@ -389,8 +406,68 @@ public class GameController : MonoBehaviour
 
         return Success;
     }
-    
-    public void StartSession(string sessionFile)
+
+    void OnGameDropdownChanged(int index)
+    {
+        // load parameter files for selected game
+        GameType = gameDropdown.options[gameDropdown.value].text;
+        PlayerPrefs.SetInt("GameTypeIndex", gameDropdown.value);
+        string phaseFolder = PlayerPrefs.GetString("PhaseParamFolder");
+
+        // update level selection based on game selection
+
+        levelDropdown.ClearOptions();
+        string phaseParamPath = PlayerPrefs.GetString("PhaseParamFolder");
+        availableLevels = ParameterLoader.GetAvailableLevels(GameType, phaseParamPath);
+
+        // from availableLevels build the list of names
+        List<string> levelNames = new List<string>();
+
+        foreach (var level in availableLevels)
+        {
+            levelNames.Add(level.displayName);
+        }
+
+        
+        levelDropdown.AddOptions(levelNames);
+        
+        //Debug.Log("Selected index: " + index);
+    }
+
+    void OnLevelDropdownChanged(int index)
+    {
+        //Debug.Log("Selected index: " + index);
+        if (availableLevels.Count > 0)
+        {
+            levelParameterFile = availableLevels[index].fileName;
+        }
+        
+        //levelParameterFile = levelDropdown.options[levelDropdown.value].text;
+        //PlayerPrefs.SetInt("LevelIndex", levelDropdown.value);
+    }
+
+    //IEnumerator ShowSelectLevelDialogCoroutine()
+    //{
+    //    // Show a load file dialog and wait for a response from user
+    //    // Load file/folder: file, Allow multiple selection: true
+    //    // Initial path: default (Documents), Initial filename: empty
+    //    // Title: "Load File", Submit button text: "Load"
+    //    yield return FileBrowser.WaitForLoadDialog(FileBrowser.PickMode.Folders, false, null, null, "Select Files", "Load");
+
+    //    // Dialog is closed
+
+    //    if (FileBrowser.Success)
+    //        if (whichField == "phase")
+    //        {
+    //            PhaseParamFolderField.GetComponent<TMPro.TMP_InputField>().text = FileBrowser.Result[0];
+    //        }
+    //        else if (whichField == "save")
+    //        {
+    //            SaveFolderField.GetComponent<TMPro.TMP_InputField>().text = FileBrowser.Result[0];
+    //        }
+    //}
+
+    public void StartSession()
     {
         // start session of selected type
         // first, get vars for logging
@@ -415,8 +492,9 @@ public class GameController : MonoBehaviour
             animalName = AnimalField.GetComponent<TMP_InputField>().text;
             preNotesText = preNotesField.GetComponent<TMP_InputField>().text;
 
-            levelParameterFile = sessionFile;
-            GameType = "Wheel";
+            //int levelIndex = 
+            //availableLevels[index].fileName
+            //GameType = "Wheel";
             SceneManager.LoadScene(GameType, LoadSceneMode.Additive);
             StartCoroutine(InvokeStartNextFrame());
 

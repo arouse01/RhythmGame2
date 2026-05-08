@@ -70,7 +70,7 @@ public class WheelSession : MonoBehaviour
     private int lastEventNum = 0;
 
     public ParameterLoader parameters;
-
+    private List<TrialParameters> trials;
 
     private static string logFilePath = Application.dataPath + "/Data/EventLog.txt";
 
@@ -135,11 +135,11 @@ public class WheelSession : MonoBehaviour
         cfg.HideLRS();
 
         // read parameter file
-        parameters.SetPhaseParamPath(phaseParamPath);
-        parameters.LoadWheelTrialParameters(sessionFile);
+        //parameters.SetPhaseParamPath(phaseParamPath);
+        trials = ParameterLoader.LoadWheelTrialParameters(phaseParamPath, sessionFile);
         //parameters.AnimalName = AnimalName;
         // Get number of trials
-        numTrials = parameters.trials.Length;
+        numTrials = trials.Count;
 
         currTrial = 0;
 
@@ -206,23 +206,23 @@ public class WheelSession : MonoBehaviour
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
         EventLogger.LogEvent("Trial", "Trial " + (currTrial + 1) + " started", timestamp);
 
-        EventLogger.LogEvent("Trial Param", "Level", parameters.trials[currTrial].level.ToString());
-        EventLogger.LogEvent("Trial Param", "Wheel Tempo", parameters.trials[currTrial].wheelSpeed.ToString());
-        string eventList = string.Join(", ", parameters.trials[currTrial].eventList);
+        EventLogger.LogEvent("Trial Param", "Level", trials[currTrial].level.ToString());
+        EventLogger.LogEvent("Trial Param", "Wheel Tempo", trials[currTrial].wheelSpeed.ToString());
+        string eventList = string.Join(", ", trials[currTrial].eventList);
         EventLogger.LogEvent("Trial Param", "Event List", eventList);
-        EventLogger.LogEvent("Trial Param", "Max Beats", parameters.trials[currTrial].beatMax.ToString());
-        EventLogger.LogEvent("Trial Param", "Target Score", parameters.trials[currTrial].targetScore.ToString());
-        EventLogger.LogEvent("Trial Param", "Safe Zone Size", parameters.trials[currTrial].colliderSize.ToString());
-        EventLogger.LogEvent("Trial Param", "Beat Zone Size", parameters.trials[currTrial].beatZoneSize.ToString());
+        EventLogger.LogEvent("Trial Param", "Max Beats", trials[currTrial].beatMax.ToString());
+        EventLogger.LogEvent("Trial Param", "Target Score", trials[currTrial].targetScore.ToString());
+        EventLogger.LogEvent("Trial Param", "Safe Zone Size", trials[currTrial].colliderSize.ToString());
+        EventLogger.LogEvent("Trial Param", "Beat Zone Size", trials[currTrial].beatZoneSize.ToString());
 
         // initiate wheel and eventBoxes
-        Wheel.wheelTempo = parameters.trials[currTrial].wheelSpeed;
-        Wheel.eventList = parameters.trials[currTrial].eventList;
-        eventMax = parameters.trials[currTrial].beatMax;
-        targetScore = parameters.trials[currTrial].targetScore;
-        colliderSize = parameters.trials[currTrial].colliderSize;
-        beatZoneSize = parameters.trials[currTrial].beatZoneSize;
-        level = parameters.trials[currTrial].level;
+        Wheel.wheelTempo = trials[currTrial].wheelSpeed;
+        Wheel.eventList = trials[currTrial].eventList;
+        eventMax = trials[currTrial].beatMax;
+        targetScore = trials[currTrial].targetScore;
+        colliderSize = trials[currTrial].colliderSize;
+        beatZoneSize = trials[currTrial].beatZoneSize;
+        level = trials[currTrial].level;
         eventCount = 0;
         score = 0;
         mistakeCount = 0;
@@ -677,7 +677,7 @@ public class WheelSession : MonoBehaviour
     }
     void OnEnable()
     {
-        Debug.Log($"Subscribing: {gameObject.name}");
+        //Debug.Log($"Subscribing: {gameObject.name}");
         GameController.Instance.OnGameStart += StartSession;
         GameController.Instance.OnGamePause += PauseGame;
         GameController.Instance.OnGameResume += ResumeGame;
@@ -685,7 +685,7 @@ public class WheelSession : MonoBehaviour
 
     void OnDisable()
     {
-        Debug.Log($"Unsubscribing: {gameObject.name}");
+        //Debug.Log($"Unsubscribing: {gameObject.name}");
         GameController.Instance.OnGameStart -= StartSession;
         GameController.Instance.OnGamePause -= PauseGame;
         GameController.Instance.OnGameResume -= ResumeGame;

@@ -1,3 +1,7 @@
+# METADATA
+name=Level 3
+game=Wheel
+# TRIALS
 Level	Rate	Pattern	MaxBeats	TargetBeats	SafeWidth	BeatWidth
 1	.25	1,1,1,1	20	5	4	2
 2	.25	1,1,1,1	20	5	4	2
