@@ -132,12 +132,11 @@ public class WheelSession : MonoBehaviour
 
         Wheel.gameObject.SetActive(true);
         Target.gameObject.SetActive(true);
-        cfg.HideLRS();
+        cfg.ShowLRS(false);
 
         // read parameter file
-        //parameters.SetPhaseParamPath(phaseParamPath);
         trials = ParameterLoader.LoadWheelTrialParameters(phaseParamPath, sessionFile);
-        //parameters.AnimalName = AnimalName;
+        
         // Get number of trials
         numTrials = trials.Count;
 
@@ -154,7 +153,6 @@ public class WheelSession : MonoBehaviour
         //string timeWithMilliseconds = currentTime.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
         string logFileName = AnimalName + "_" + currDate + ".txt";
-        // Detect system to determine where to put log folder
 
         string logFileFolder = Path.Combine(savePath, AnimalName);
         logFilePath = Path.Combine(logFileFolder, logFileName);
@@ -559,7 +557,7 @@ public class WheelSession : MonoBehaviour
         if (currLives == 0)
         {
             // reached zero lives
-            GameController.Instance.TriggerLRS(LRSDuration);
+            GameController.Instance.TriggerBlackout(LRSDuration);
             UpdateLives(defaultLives);
         } 
         else
