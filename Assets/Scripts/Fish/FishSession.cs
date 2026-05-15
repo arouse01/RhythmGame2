@@ -4,45 +4,28 @@ using System.IO;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static UnityEngine.GraphicsBuffer;
 using TimeUtil = UnityEngine.Time;
 
-public class WheelSession : MonoBehaviour
+public class FishSession : MonoBehaviour
 {
-    //public GameController controller;
     private string GameType;
-    public WheelControl Wheel;
-    public TargetControl Target;
-    //public Image LRSImage;
 
-    //private GameObject LRSDurationField;
-    //private GameObject TargetWidthField;
-
-    //private GameObject levelScoreObject;
-    //private GameObject lifeMarkers;
-
+    public PlayerControl player;
+    public FishControl fish;
+    
     private bool gameOver;  // game is over, move to user input
     private bool gameOverStarted;  // gameover process started
+    private bool pause;
 
-    public AudioClip bridgeSound;
-    public AudioClip tickSound;
-    public AudioClip goodHitSound;
-    public AudioClip badHitSound;
-    public bool pause;
-
-    public Color safeZoneColorDefault;
-    public Color beatZoneColorDefault;
-    public Color beatZoneColorFlash;
-    private Color beatZoneColorFade; // fade beat zone on boop
-
-    private bool safeZoneContact; // whether target is touching an eventBox
-    private bool beatZoneContact; // whether target is touching center of eventBox
-    private string sessionNumber;  // store session number so we can disable some events for specific phases (i.e. phase 0 where we don't need a score and don't want a sound on beat contact)
+    private string sessionNumber; 
     private int score;  // current score
     private int mistakeCount; // number of errors
     private int currLives; // number of lives left
     private int defaultLives; // number of errors allowed
     private int level;  // current level
-    private bool booped;  // whether the current eventBox has been hit
+    private bool boopedWater;  // whether the current eventBox has been hit
+    private bool boopedAir;  // whether the current eventBox has been hit
     private int eventCount;  // total number of contact events (beats)
     private AudioSource audioSource;
     private int numTrials;  // number of trials
@@ -57,6 +40,10 @@ public class WheelSession : MonoBehaviour
     private float beatZoneSize; // width of the beatZone collider
     private Collider beatZoneObject;
     private Collider safeZoneObject;
+    private bool safeZoneContactWater; // whether target is touching an eventBox
+    private bool beatZoneContactWater; // whether target is touching center of eventBox
+    private bool safeZoneContactAir; // whether target is touching an eventBox
+    private bool beatZoneContactAir; // whether target is touching center of eventBox
 
     private List<double> tickTimes = new();
     private List<double> tapTimes = new();
@@ -64,44 +51,49 @@ public class WheelSession : MonoBehaviour
     private int lastEventNum = 0;
 
     public ParameterLoader parameters;
-    private List<WheelTrialParameters> trials;
+    private List<FishTrialParameters> trials;
 
     private static string logFilePath = Application.dataPath + "/Data/EventLog.txt";
 
+    public AudioClip bridgeSound;
+    public AudioClip tickSound;
+    public AudioClip goodHitSound;
+    public AudioClip badHitSound;
+
     public InputActionAsset inputActions;
-    private InputAction triggerAction;
+    private InputAction diveAction;
+    private InputAction jumpAction;
     private InputAction cancelAction;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        GameType = "Wheel";
-        // get refs to objects from GameController
+        GameType = "Fish";
+        
         gameOver = false;
         gameOverStarted = false;
 
         trialIsRunning = false;
         score = 0;
         eventCount = 0;
-        booped = false;
+        boopedWater = false;
+        boopedAir = false;
         pause = false;
 
-        beatZoneColorFade = beatZoneColorDefault;
-        beatZoneColorFade.a = .5f;
+
 
         audioSource = GetComponent<AudioSource>();
-        Wheel.gameObject.SetActive(false);
-        Target.gameObject.SetActive(false);
-
+        //Wheel.gameObject.SetActive(false);
+        //Target.gameObject.SetActive(false);
     }
 
+    // Update is called once per frame
     void Update()
     {
         if (trialIsRunning && eventCount >= eventMax)
         {
             EndTrial(false);
         }
-
     }
 
     public void StartSession()
@@ -118,21 +110,16 @@ public class WheelSession : MonoBehaviour
         LRSDuration = PlayerPrefs.GetFloat("LRSDuration");
 
         targetZoneWidth = PlayerPrefs.GetFloat("TargetWidth");
-        
-        Target.targetZoneWidth = targetZoneWidth;
 
-        //preGamePanel.SetActive(false);
-        //UserInputObject.SetActive(false);
-        //InGameText.SetActive(true);
+        //Target.targetZoneWidth = targetZoneWidth;
 
-        Wheel.gameObject.SetActive(true);
-        Target.gameObject.SetActive(true);
+        //Wheel.gameObject.SetActive(true);
+        //Target.gameObject.SetActive(true);
         cfg.ShowLRS(false);
 
         // read parameter file
-        // TODO: should the gameType variable be hardcoded like this?
-        trials = ParameterLoader.LoadWheelTrialParameters(phaseParamPath, sessionFile);
-        
+        trials = ParameterLoader.LoadFishTrialParameters(phaseParamPath, sessionFile);
+
         // Get number of trials
         numTrials = trials.Count;
 
@@ -177,7 +164,8 @@ public class WheelSession : MonoBehaviour
         score = 0;
         trialIsRunning = false;
         eventCount = 0;
-        booped = false;
+        boopedWater = false;
+        boopedAir = false;
         pause = false;
 
         defaultLives = 3;
@@ -187,10 +175,9 @@ public class WheelSession : MonoBehaviour
 
         cfg.UpdateMessage("Click to start<br>Phase " + sessionNumber);
         cfg.UpdateStats(""); // clear statsText because no trials have been run yet
-        Wheel.StopSpin();
 
         ActivateInputs();
-        
+
 
 
     }
@@ -202,17 +189,17 @@ public class WheelSession : MonoBehaviour
         EventLogger.LogEvent("Trial", "Trial " + (currTrial + 1) + " started", timestamp);
 
         EventLogger.LogEvent("Trial Param", "Level", trials[currTrial].level.ToString());
-        EventLogger.LogEvent("Trial Param", "Wheel Tempo", trials[currTrial].wheelSpeed.ToString());
-        string eventList = string.Join(", ", trials[currTrial].eventList);
-        EventLogger.LogEvent("Trial Param", "Event List", eventList);
+        EventLogger.LogEvent("Trial Param", "Swim Speed", trials[currTrial].travelSpeed.ToString());
+        string eventList = string.Join(", ", trials[currTrial].fishEventList);
+        EventLogger.LogEvent("Trial Param", "Fish Event List", eventList);
         EventLogger.LogEvent("Trial Param", "Max Beats", trials[currTrial].beatMax.ToString());
         EventLogger.LogEvent("Trial Param", "Target Score", trials[currTrial].targetScore.ToString());
         EventLogger.LogEvent("Trial Param", "Safe Zone Size", trials[currTrial].colliderSize.ToString());
         EventLogger.LogEvent("Trial Param", "Beat Zone Size", trials[currTrial].beatZoneSize.ToString());
 
         // initiate wheel and eventBoxes
-        Wheel.wheelTempo = trials[currTrial].wheelSpeed;
-        Wheel.eventList = trials[currTrial].eventList;
+        fish.fishRate = trials[currTrial].travelSpeed;
+        fish.fishEventList = trials[currTrial].fishEventList;
         eventMax = trials[currTrial].beatMax;
         targetScore = trials[currTrial].targetScore;
         colliderSize = trials[currTrial].colliderSize;
@@ -230,13 +217,13 @@ public class WheelSession : MonoBehaviour
         GameController.Instance.UpdateScore(score);
         GameController.Instance.ShowLevelScore(false);
         trialIsRunning = true;
-        Wheel.colliderSize = colliderSize;
-        Wheel.beatZoneSize = beatZoneSize;
-        Wheel.safeZoneColorDefault = safeZoneColorDefault;
-        Wheel.beatZoneColorDefault = beatZoneColorDefault;
-        Target.beatZoneColorDefault = beatZoneColorDefault;
-        Wheel.gameLevel = level;
-        Wheel.Reset();
+        fish.colliderSize = colliderSize;
+        fish.beatZoneSize = beatZoneSize;
+        //fishController.safeZoneColorDefault = safeZoneColorDefault;
+        //fishController.beatZoneColorDefault = beatZoneColorDefault;
+        //player.beatZoneColorDefault = beatZoneColorDefault;
+        //Wheel.gameLevel = level;
+        //Wheel.Reset();
         //Debug.Break();
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepPrecise;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepPrecise * 3;
@@ -246,7 +233,7 @@ public class WheelSession : MonoBehaviour
         tapTimes.Clear();
         tapAngles.Clear();
 
-        Wheel.StartSpin();
+        fish.StartSwim();
 
 
     }
@@ -258,11 +245,11 @@ public class WheelSession : MonoBehaviour
         EventLogger.LogEvent("Feedback", "LRS initiated");
         pause = true;
         //LRSImage.enabled = true; // Enable the blackout image
-        Wheel.StopSpin();
+        fish.StopSwim();
         //controller.TriggerLRS(duration);
         //scoreText.enabled = false;
         //Invoke(nameof(DisableLRS), duration); // Disable after the duration
-        
+
     }
 
     public void ResumeGame()
@@ -275,12 +262,13 @@ public class WheelSession : MonoBehaviour
 
         //controller.InGameText.SetActive(true);
         //scoreText.enabled = true;
-        Wheel.StartSpin();
-        
+        fish.StartSwim();
+
     }
 
     private void OnClick(InputAction.CallbackContext context)
     {
+        // Any button pressed - for moving between trials or moving to game over section
         //Debug.Log("Clicked!");
         if (gameOver & !gameOverStarted)
         {
@@ -298,115 +286,230 @@ public class WheelSession : MonoBehaviour
             }
 
         }
-        else
+    }
+
+    private void OnDivePress(InputAction.CallbackContext context)
+    {
+        if (!pause)
         {
-            if (!pause)
+            player.Dive();
+            double tapTime = TimeUtil.fixedTimeAsDouble;
+            tapTimes.Add(tapTime);
+
+            // calculate phase angle of tap
+            // Problematic if tapping before first tick - no known time point to determine beat onset
+            // But we could get current wheel angle and calculate angle of next beat...
+            // On the other hand, can you really argue for the angle of taps before the first tick being meaningful in relation to the beat construct in any way?
+            // Maybe if they're ahead of the first tick but close? Then it's a question of accuracy, but still likely before any construct of beat is created 
+            double tapPhase;
+            if (lastEventNum > 0)
             {
-                Target.Bounce();
-                double tapTime = TimeUtil.fixedTimeAsDouble;
-                tapTimes.Add(tapTime);
-
-                // calculate phase angle of tap
-                // Problematic if tapping before first tick - no known time point to determine beat onset
-                // But we could get current wheel angle and calculate angle of next beat...
-                // On the other hand, can you really argue for the angle of taps before the first tick being meaningful in relation to the beat construct in any way?
-                // Maybe if they're ahead of the first tick but close? Then it's a question of accuracy, but still likely before any construct of beat is created 
-                double tapPhase;
-                if (lastEventNum > 0)
-                {
-                    // if tap is after first tick
-                    tapPhase = GetAngle(tapTime, tickTimes[^1]);
-                    tapAngles.Add(tapPhase);
-                }
-                else
-                {
-                    // Tap is before first tick, so count as error
-                    //tapPhase = GetAngle(tapTime, -1d);
-
-                }
-                //tapAngles.Add(tapPhase);
-                //EventLogger.LogEvent("Debug", "Tap Phase", tapPhase.ToString());
-
-                // Classify the tap
-                if (beatZoneContact && !booped)
-                {
-                    // hit in beat zone, score point
-                    EventLogger.LogEvent("Response", "Hit");
-                    booped = true;
-                    if (beatZoneObject != null)
-                    {
-                        beatZoneObject.GetComponent<Renderer>().material.color = beatZoneColorFlash;
-                    }
-
-                    score++;
-                    currLives = defaultLives;
-                    UpdateLives(currLives);  // reset lives to max
-
-                    // TODO: placeholder for calculating accuracy
-
-                    GameController.Instance.UpdateScore(score);
-                    audioSource.PlayOneShot(goodHitSound);
-
-                    if (score >= targetScore)
-                    {
-                        audioSource.PlayOneShot(bridgeSound);
-                        EndTrial();
-                    }
-
-                }
-                else if (safeZoneContact && !booped)
-                {
-                    // hit in safe zone, no score change
-                    EventLogger.LogEvent("Response", "Safe");
-                    booped = true;
-                    currLives = defaultLives;
-                    UpdateLives(currLives);  // reset lives to max
-                    safeZoneObject.transform.Find("BeatZone").GetComponent<Renderer>().material.color = beatZoneColorFade;
-
-
-
-                    //audioSource.PlayOneShot(goodHitSound);
-
-                }
-                else
-                {
-                    if (safeZoneContact || beatZoneContact)
-                    {
-                        // in the safeZone or beatZone but not counted as hit
-                        EventLogger.LogEvent("Response", "Miss (already hit)");
-                    }
-                    else
-                    {
-                        EventLogger.LogEvent("Response", "Miss");
-                    }
-
-                    if (score > 0)
-                    {
-                        score = 0;
-                    }
-
-                    mistakeCount++;
-                    GameController.Instance.UpdateScore(score);
-
-                    currLives--;
-                    UpdateLives(currLives);
-
-                    // TODO: placeholder for accuracy update
-
-                    //audioSource.PlayOneShot(badHitSound, 0.5f);
-                }
-
-                //if (currLives <= 0)
-                //{
-
-                //    TriggerLRS(LRSDuration);
-                //    score = 0;
-                //    scoreText.SetText(score.ToString());
-                //}
-
-
+                // if tap is after first tick
+                tapPhase = GetAngle(tapTime, tickTimes[^1]);
+                tapAngles.Add(tapPhase);
+            }
+            else
+            {
+                // Tap is before first tick, so count as error
+                //tapPhase = GetAngle(tapTime, -1d);
 
             }
+            //tapAngles.Add(tapPhase);
+            //EventLogger.LogEvent("Debug", "Tap Phase", tapPhase.ToString());
+
+            // Classify the tap
+            if (beatZoneContactWater && !boopedWater)
+            {
+                // hit in beat zone, score point
+                EventLogger.LogEvent("Response", "Hit");
+                boopedWater = true;
+                if (beatZoneObject != null)
+                {
+                    //beatZoneObject.GetComponent<Renderer>().material.color = beatZoneColorFlash;
+                }
+
+                score++;
+                currLives = defaultLives;
+                UpdateLives(currLives);  // reset lives to max
+
+                // TODO: placeholder for calculating accuracy
+
+                GameController.Instance.UpdateScore(score);
+                audioSource.PlayOneShot(goodHitSound);
+
+                if (score >= targetScore)
+                {
+                    audioSource.PlayOneShot(bridgeSound);
+                    EndTrial();
+                }
+
+            }
+            else if (safeZoneContactWater && !boopedWater)
+            {
+                // hit in safe zone, no score change
+                EventLogger.LogEvent("Response", "Safe");
+                boopedWater = true;
+                currLives = defaultLives;
+                UpdateLives(currLives);  // reset lives to max
+                //safeZoneObject.transform.Find("BeatZone").GetComponent<Renderer>().material.color = beatZoneColorFade;
+
+
+
+                //audioSource.PlayOneShot(goodHitSound);
+
+            }
+            else
+            {
+                if (safeZoneContactWater || beatZoneContactWater)
+                {
+                    // in the safeZone or beatZone but not counted as hit
+                    EventLogger.LogEvent("Response", "Miss (already hit)");
+                }
+                else
+                {
+                    EventLogger.LogEvent("Response", "Miss");
+                }
+
+                if (score > 0)
+                {
+                    score = 0;
+                }
+
+                mistakeCount++;
+                GameController.Instance.UpdateScore(score);
+
+                currLives--;
+                UpdateLives(currLives);
+
+                // TODO: placeholder for accuracy update
+
+                //audioSource.PlayOneShot(badHitSound, 0.5f);
+            }
+
+            //if (currLives <= 0)
+            //{
+
+            //    TriggerLRS(LRSDuration);
+            //    score = 0;
+            //    scoreText.SetText(score.ToString());
+            //}
+
+
+
+        
+        }
+
+    }
+
+    private void OnJumpPress(InputAction.CallbackContext context)
+    {
+        if (!pause)
+        {
+            player.Dive();
+            double tapTime = TimeUtil.fixedTimeAsDouble;
+            tapTimes.Add(tapTime);
+
+            // calculate phase angle of tap
+            // Problematic if tapping before first tick - no known time point to determine beat onset
+            // But we could get current wheel angle and calculate angle of next beat...
+            // On the other hand, can you really argue for the angle of taps before the first tick being meaningful in relation to the beat construct in any way?
+            // Maybe if they're ahead of the first tick but close? Then it's a question of accuracy, but still likely before any construct of beat is created 
+            double tapPhase;
+            if (lastEventNum > 0)
+            {
+                // if tap is after first tick
+                tapPhase = GetAngle(tapTime, tickTimes[^1]);
+                tapAngles.Add(tapPhase);
+            }
+            else
+            {
+                // Tap is before first tick, so count as error
+                //tapPhase = GetAngle(tapTime, -1d);
+
+            }
+            //tapAngles.Add(tapPhase);
+            //EventLogger.LogEvent("Debug", "Tap Phase", tapPhase.ToString());
+
+            // Classify the tap
+            if (beatZoneContactAir && !boopedAir)
+            {
+                // hit in beat zone, score point
+                EventLogger.LogEvent("Response", "Hit");
+                boopedAir = true;
+                if (beatZoneObject != null)
+                {
+                    //beatZoneObject.GetComponent<Renderer>().material.color = beatZoneColorFlash;
+                }
+
+                score++;
+                currLives = defaultLives;
+                UpdateLives(currLives);  // reset lives to max
+
+                // TODO: placeholder for calculating accuracy
+
+                GameController.Instance.UpdateScore(score);
+                audioSource.PlayOneShot(goodHitSound);
+
+                if (score >= targetScore)
+                {
+                    audioSource.PlayOneShot(bridgeSound);
+                    EndTrial();
+                }
+
+            }
+            else if (safeZoneContactAir && !boopedAir)
+            {
+                // hit in safe zone, no score change
+                EventLogger.LogEvent("Response", "Safe");
+                boopedAir = true;
+                currLives = defaultLives;
+                UpdateLives(currLives);  // reset lives to max
+                //safeZoneObject.transform.Find("BeatZone").GetComponent<Renderer>().material.color = beatZoneColorFade;
+
+
+
+                //audioSource.PlayOneShot(goodHitSound);
+
+            }
+            else
+            {
+                if (safeZoneContactAir || beatZoneContactAir)
+                {
+                    // in the safeZone or beatZone but not counted as hit
+                    EventLogger.LogEvent("Response", "Miss (already hit)");
+                }
+                else
+                {
+                    EventLogger.LogEvent("Response", "Miss");
+                }
+
+                if (score > 0)
+                {
+                    score = 0;
+                }
+
+                mistakeCount++;
+                GameController.Instance.UpdateScore(score);
+
+                currLives--;
+                UpdateLives(currLives);
+
+                // TODO: placeholder for accuracy update
+
+                //audioSource.PlayOneShot(badHitSound, 0.5f);
+            }
+
+            //if (currLives <= 0)
+            //{
+
+            //    TriggerLRS(LRSDuration);
+            //    score = 0;
+            //    scoreText.SetText(score.ToString());
+            //}
+
+
+
+
         }
 
     }
@@ -416,19 +519,22 @@ public class WheelSession : MonoBehaviour
         EndTrial();
         GameOver();
     }
-    
+
     void EndTrial(bool success = true)
     {
-        Wheel.StopSpin();
+        fish.StopSwim();
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepSlow;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepSlow * 3;
         trialIsRunning = false;
         EventLogger.LogEvent("Trial", "Trial " + (currTrial + 1) + " ended");
-        Wheel.Clear();
-        Wheel.Resize();
-        beatZoneContact = false;
-        safeZoneContact = false;
-        booped = false;
+        fish.Clear();
+        //Wheel.Resize();
+        beatZoneContactWater = false;
+        safeZoneContactWater = false;
+        beatZoneContactAir = false;
+        safeZoneContactAir = false;
+        boopedWater = false;
+        boopedAir = false;
 
         // pause so the score screen doesn't get skipped
         pause = true;
@@ -556,53 +662,49 @@ public class WheelSession : MonoBehaviour
             // reached zero lives
             GameController.Instance.TriggerBlackout(LRSDuration);
             UpdateLives(defaultLives);
-        } 
+        }
         else
         {
             GameController.Instance.UpdateLives(currLives);
         }
-          
+
     }
-    
+
     void GameOver()
     {
         DeactivateInputs();
-        //InGameText.SetActive(false);
-        //gameOverStarted = true;
-        //UserInputObject.SetActive(true);
-        //gameOverPanel.SetActive(true);
-        //prefsButton.SetActive(false);
-        
-        Wheel.gameObject.SetActive(false);
-        Target.gameObject.SetActive(false);
+
+        player.gameObject.SetActive(false);
+        fish.gameObject.SetActive(false);
         GameController.Instance.GameOver();
     }
 
     public double GetAngle(double tapTime, double prevTick)
     {
         // Important to note this is approximate - we're guessing when the next beat will happen based on math, but can't be 100% certain due to many points of variability
+        // TODO: revise for getting next fish position in terms of angle
 
         double nextTick;
         if (prevTick < 0)
         {
             // Special case when the tap occurs before any tick, so we have to estimate both the previous tick time and the next tick time
             // Calculate next tick time using wheel angle and speed (first tick is always at 0 degrees)
-            double wheelAngle = Wheel.GetRotation();
+            double wheelAngle = fish.GetNextBeat();
             // To start the wheel is usually rotated a bit before the first tick, so rotation just below 360. Convert to 
             if (wheelAngle > 270.0)
             {
                 wheelAngle = 360.0 - wheelAngle;
             }
-            nextTick = tapTime + wheelAngle / (Wheel.wheelTempo * 360.0);
+            nextTick = tapTime + wheelAngle / (fish.fishRate * 360.0);
             //EventLogger.LogEvent("Debug", "Next Tick", nextTick.ToString());
-            prevTick = nextTick - Wheel.eventList[lastEventNum] / (Wheel.wheelTempo * Wheel.SumArray(Wheel.eventList));
+            prevTick = nextTick - fish.fishEventList[lastEventNum] / (fish.fishRate * fish.SumArray(fish.fishEventList));
         }
         else
         {
             // Get which interval we're on - we can tell which eventBox was the most recent since it's stored in lastEventNum
             // For taps after the first tick, tested with following parameters: timestep = 0.004, tempo = 0.25, pattern 1,1,1,1, beat zone size = 2
             // All predicted phases were smaller than 1x10E-6
-            nextTick = prevTick + Wheel.eventList[lastEventNum - 1] / (Wheel.wheelTempo * Wheel.SumArray(Wheel.eventList));
+            nextTick = prevTick + fish.fishEventList[lastEventNum - 1] / (fish.fishRate * fish.SumArray(fish.fishEventList));
         }
         double closest = (System.Math.Abs(prevTick - tapTime) <= System.Math.Abs(nextTick - tapTime)) ? prevTick : nextTick;
         double interval = nextTick - prevTick;
@@ -638,12 +740,16 @@ public class WheelSession : MonoBehaviour
         TargetControl.OnBeatZoneEnd += BeatZoneContactOff;
         BeatTicker.OnBeatContact += BeatContact;
 
-        var gameplayActions = inputActions.FindActionMap("Wheel");
-        triggerAction = gameplayActions.FindAction("Click");
+        var gameplayActions = inputActions.FindActionMap(GameType);
+        diveAction = gameplayActions.FindAction("Dive");
+        jumpAction = gameplayActions.FindAction("Jump");
         cancelAction = gameplayActions.FindAction("Cancel");
 
-        triggerAction.performed += OnClick;
-        triggerAction.Enable();
+        diveAction.performed += OnDivePress;
+        diveAction.Enable();
+
+        jumpAction.performed += OnJumpPress;
+        jumpAction.Enable();
 
         cancelAction.performed += OnEscape;
         cancelAction.Enable();
@@ -658,10 +764,16 @@ public class WheelSession : MonoBehaviour
         TargetControl.OnBeatZoneEnd -= BeatZoneContactOff;
         BeatTicker.OnBeatContact -= BeatContact;
 
-        if (triggerAction != null)
+        if (diveAction != null)
         {
-            triggerAction.performed -= OnClick;
-            triggerAction.Disable();
+            diveAction.performed -= OnDivePress;
+            diveAction.Disable();
+        }
+
+        if (jumpAction != null)
+        {
+            jumpAction.performed -= OnJumpPress;
+            jumpAction.Disable();
         }
 
         if (cancelAction != null)
@@ -715,17 +827,17 @@ public class WheelSession : MonoBehaviour
         EventLogger.LogEvent("Beat", "Beat safe window start");
         eventCount++;
 
-        safeZoneObject = Target.safeZone;
-        safeZoneContact = true;
-        booped = false;
+        safeZoneObject = player.safeZone;
+        safeZoneContactWater = true;
+        boopedWater = false;
 
     }
 
     private void WindowContactOff()
     {
         EventLogger.LogEvent("Beat", "Beat safe window end");
-        safeZoneContact = false;
-        if (!booped)  // If beat passes without a tap, reset score
+        safeZoneContactWater = false;
+        if (!boopedWater)  // If beat passes without a tap, reset score
         {
             if (score > 0)
             {
@@ -733,7 +845,7 @@ public class WheelSession : MonoBehaviour
                 GameController.Instance.UpdateScore(score);
             }
         }
-        Wheel.ResetBoxColors();  // Reset all EventBox pieces to their default colors, just in case one got colored weird for some reason
+        //Wheel.ResetBoxColors();  // Reset all EventBox pieces to their default colors, just in case one got colored weird for some reason
     }
 
     private void BeatContact()
@@ -756,13 +868,13 @@ public class WheelSession : MonoBehaviour
     private void BeatZoneContactOn()
     {
         EventLogger.LogEvent("Beat", "Beat zone start");
-        beatZoneContact = true;
-        beatZoneObject = Target.beatZone;
+        beatZoneContactWater = true;
+        beatZoneObject = player.beatZone;
     }
 
     private void BeatZoneContactOff()
     {
         EventLogger.LogEvent("Beat", "Beat zone end");
-        beatZoneContact = false;
+        beatZoneContactWater = false;
     }
 }

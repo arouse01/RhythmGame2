@@ -353,7 +353,7 @@ public class GameController : MonoBehaviour
         // load parameter files for selected game
         GameType = gameDropdown.options[gameDropdown.value].text;
         PlayerPrefs.SetInt("GameTypeIndex", gameDropdown.value);
-        string phaseFolder = PlayerPrefs.GetString("PhaseParamFolder");
+        //string phaseFolder = PlayerPrefs.GetString("PhaseParamFolder");
 
         // update level selection based on game selection
 
@@ -362,7 +362,7 @@ public class GameController : MonoBehaviour
         availableLevels = ParameterLoader.GetAvailableLevels(GameType, phaseParamPath);
 
         // from availableLevels build the list of names
-        List<string> levelNames = new List<string>();
+        List<string> levelNames = new();
 
         foreach (var level in availableLevels)
         {
