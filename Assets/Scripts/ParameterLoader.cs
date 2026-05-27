@@ -286,6 +286,12 @@ public class ParameterLoader
                 continue;
             }
 
+            // allow for comments
+            if (line.StartsWith("#"))
+            {
+                continue;
+            }
+
             if (!inTrialSection)
             {
                 continue;
@@ -313,7 +319,8 @@ public class ParameterLoader
         string[] splitLine = line.Split('\t'); // Split the line by tabs
 
         if (columnMapping.TryGetValue("Level", out int levelCol) &&
-            columnMapping.TryGetValue("Rate", out int wheelSpeedCol) &&
+            columnMapping.TryGetValue("Tempo", out int fishSpeedCol) &&
+            columnMapping.TryGetValue("BeepBoopTime", out int beepBoopCol) &&
             columnMapping.TryGetValue("Pattern", out int patternCol) &&
             columnMapping.TryGetValue("MaxBeats", out int beatMaxCol) &&
             columnMapping.TryGetValue("TargetBeats", out int targetScoreCol) &&
@@ -321,23 +328,27 @@ public class ParameterLoader
             columnMapping.TryGetValue("BeatWidth", out int beatZoneSizeCol))
         {
             if (levelCol < splitLine.Length &&
-                wheelSpeedCol < splitLine.Length &&
+                fishSpeedCol < splitLine.Length &&
                 patternCol < splitLine.Length)
             {
                 // Parse and use the values
                 int levelOut = int.Parse(splitLine[levelCol]);
-                float wheelSpeedOut = float.Parse(splitLine[wheelSpeedCol]);
-                float[] eventListValues = Array.ConvertAll(splitLine[patternCol].Split(','), float.Parse);
+                float fishSpeedOut = float.Parse(splitLine[fishSpeedCol]);
+                double beepBoopTime = double.Parse(splitLine[beepBoopCol]);
+                string[] eventListValues = splitLine[patternCol].Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 int beatMaxOut = int.Parse(splitLine[beatMaxCol]);
                 int targetScoreOut = int.Parse(splitLine[targetScoreCol]);
                 float colliderSizeOut = float.Parse(splitLine[colliderSizeCol]);
                 float beatZoneSizeOut = float.Parse(splitLine[beatZoneSizeCol]);
 
+                Beat[] notes = ConvertNotes(eventListValues);  // noteStrength is currently unused - it's a placeholder for possible emphasis implementation
+
                 FishTrialParameters currTrial = new()
                 {
                     level = levelOut,
-                    travelSpeed = wheelSpeedOut,
-                    fishEventList = eventListValues,
+                    tempo = fishSpeedOut,
+                    beepBoopTime = beepBoopTime,
+                    fishEventList = notes,
                     beatMax = beatMaxOut,
                     targetScore = targetScoreOut,
                     colliderSize = colliderSizeOut,
@@ -359,7 +370,55 @@ public class ParameterLoader
         }
     }
 
+    private static Beat[] ConvertNotes(string[] notes)
+    {
+        List<Beat> beatList = new();
+        
+        foreach (string note in notes)
+        {
+            beatList.Add(GetBeat(note));
+        }
+        Beat[] beatArray = beatList.ToArray();
+        
+        return beatArray;
+    }
 
+    private static Beat GetBeat(string value)
+    {
+        Beat beatOut = new();
+
+        // get base note duration
+        float beat = value[0] switch
+        {
+            'w' => 4f,  // whole note
+            'h' => 2f,  // half note
+            'q' => 1f,  // quarter
+            'e' => 0.5f,  // eighth
+            's' => 0.25f,  // sixteenth
+            _ => 0f,
+        };
+
+        // apply duration modifier, if any
+        float addition = beat / 2;
+        while (value.Contains('.'))  // loop for each . in value
+        {
+            beat += addition;
+            addition /= 2f;
+        }
+        // apply modifiers, if any
+        for (int i = 1; i < value.Length; i++)
+        {
+            while (value.Contains('r'))  // there should only be one 'r' but additional ones don't change whether it's a rest or not
+            {
+                beatOut.isRest = true;
+            }
+            
+        }
+        
+        beatOut.beatDuration = beat;
+
+        return beatOut;
+    }
 
 }
 

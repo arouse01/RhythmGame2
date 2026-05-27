@@ -33,6 +33,8 @@ public class GameController : MonoBehaviour
 {
     public static GameController Instance { get; private set; }
 
+    public bool debugMode;
+    
     public event System.Action OnGameStart;
     public event System.Action OnGamePause;
     public event System.Action OnGameResume;
@@ -109,6 +111,8 @@ public class GameController : MonoBehaviour
                 SceneManager.UnloadSceneAsync(scene);
             }
         }
+
+        debugMode = true;
 
         TimeUtil.fixedDeltaTime = timeStepSlow;
         TimeUtil.maximumDeltaTime = timeStepSlow * 3;
@@ -192,6 +196,11 @@ public class GameController : MonoBehaviour
         prefsButton.SetActive(true);
         prefsPanel.SetActive(false);
         InGameText.SetActive(false);
+
+        if (debugMode)
+        {
+            DebugModeStart(1, 1);
+        }
     }
 
     public void OpenPrefs()
@@ -371,7 +380,8 @@ public class GameController : MonoBehaviour
 
         
         levelDropdown.AddOptions(levelNames);
-        
+
+        levelParameterFile = availableLevels[index].fileName;
         //Debug.Log("Selected index: " + index);
     }
 
@@ -407,6 +417,13 @@ public class GameController : MonoBehaviour
     //            SaveFolderField.GetComponent<TMPro.TMP_InputField>().text = FileBrowser.Result[0];
     //        }
     //}
+
+    void DebugModeStart(int gameType, int fileNumber)
+    {
+        gameDropdown.value = gameType;
+        levelDropdown.value = fileNumber;
+        StartSession();
+    }
 
     public void StartSession()
     {
@@ -506,10 +523,12 @@ public class GameController : MonoBehaviour
     private IEnumerator BlackoutRoutine(float duration)
     {
         SetBlackout(true);
+        //AudioListener.pause = true;
 
         yield return new WaitForSeconds(duration);
 
         SetBlackout(false);
+        //AudioListener.pause = false;
 
         blackoutRoutine = null;
     }

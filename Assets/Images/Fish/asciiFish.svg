@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="49.44278mm"
+   height="3.1614871mm"
+   viewBox="0 0 49.442776 3.1614871"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   sodipodi:docname="asciiFish.svg"
+   inkscape:export-filename="asciiFish.png"
+   inkscape:export-xdpi="2000"
+   inkscape:export-ydpi="2000"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.8756734"
+     inkscape:cx="85.719053"
+     inkscape:cy="52.335568"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="49.442776"
+       height="3.1614871"
+       id="page3"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <rect
+       x="159.96252"
+       y="159.96252"
+       width="195.74817"
+       height="16.895121"
+       id="rect1" />
+    <rect
+       x="159.96252"
+       y="159.96252"
+       width="46.441399"
+       height="19.550514"
+       id="rect1-4" />
+    <rect
+       x="159.96252"
+       y="159.96252"
+       width="24.446548"
+       height="16.599915"
+       id="rect1-4-5" />
+    <rect
+       x="159.96252"
+       y="159.96252"
+       width="65.132668"
+       height="25.815147"
+       id="rect1-4-7" />
+    <rect
+       x="159.96252"
+       y="159.96252"
+       width="195.74817"
+       height="16.895121"
+       id="rect1-2" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-42.535586,-41.820854)">
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-0.19551696,-0.39031287)"
+       id="text1"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;line-height:0;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect1);shape-padding:0.860624;display:inline;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.1;stroke-dasharray:none"
+       x="23.072861"
+       y="0"><tspan
+         x="160.82422"
+         y="170.13512"
+         id="tspan7"><tspan
+           style="font-size:13.3333px;line-height:0.8"
+           id="tspan4">&lt;⁰))&gt;◃&lt;⁰))&gt;◅&lt;⁰))&gt;◃&lt;⁰))&gt;◁</tspan><tspan
+           style="line-height:0.8"
+           id="tspan6">
+</tspan></tspan></text>
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="43.641403"
+       y="53.479759"
+       id="text13">&lt;</text>
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="45.708454"
+       y="53.479759"
+       id="text12">◉</text>
+    <text
+       style="font-weight:300;font-size:3.97059px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0297795"
+       x="42.147194"
+       y="60.190514"
+       id="text11"
+       inkscape:label="Tail 1"
+       transform="scale(1.1254811,0.88850891)">◃</text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-4.2035409,20.096002)"
+       id="text1-8"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;line-height:0;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect1-2);shape-padding:0.860624;display:inline;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.1;stroke-dasharray:none"
+       x="23.072861"
+       y="0"><tspan
+         x="160.82422"
+         y="171.46845"
+         id="tspan10"><tspan
+           style="font-size:13.3333px;line-height:1"
+           id="tspan8">&lt;◉◃&lt;◉◅&lt;◉◃&lt;◉◁</tspan><tspan
+           style="line-height:1"
+           id="tspan9">
+</tspan></tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2"
+     transform="translate(-42.535586,-41.820855)">
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="43.641403"
+       y="53.479759"
+       id="text16">&lt;</text>
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="45.708454"
+       y="53.479759"
+       id="text15">◉</text>
+    <text
+       style="font-weight:300;font-size:3.51711px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0263784"
+       x="47.928078"
+       y="53.316216"
+       id="text14"
+       inkscape:label="Tail 2"
+       transform="scale(0.99694112,1.0030683)">◅</text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="Layer 3"
+     transform="translate(-0.22789306,0.30609537)">
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="1.3337102"
+       y="11.35281"
+       id="text19">&lt;</text>
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="3.4007611"
+       y="11.35281"
+       id="text18">◉</text>
+    <text
+       style="font-weight:300;font-size:3.97059px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0297795"
+       x="4.5564313"
+       y="12.777427"
+       id="text17"
+       inkscape:label="Tail 3"
+       transform="scale(1.1254811,0.88850891)">◃</text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="Layer 4"
+     transform="translate(-0.22789306,0.30609537)">
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="1.3337102"
+       y="11.35281"
+       id="text22">&lt;</text>
+    <text
+       style="font-weight:300;font-size:3.52777px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';stroke:#000000;stroke-width:0.0264583"
+       x="3.4007611"
+       y="11.35281"
+       id="text21">◉</text>
+    <text
+       style="font-weight:300;font-size:3.51711px;line-height:0.8;font-family:'Cascadia Mono';-inkscape-font-specification:'Cascadia Mono Light';display:inline;stroke:#000000;stroke-width:0.0263784"
+       x="5.4905734"
+       y="11.31813"
+       id="text20"
+       inkscape:label="Tail 4"
+       transform="scale(0.9969411,1.0030683)">◁</text>
+  </g>
+</svg>
