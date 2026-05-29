@@ -406,13 +406,19 @@ public class ParameterLoader
             addition /= 2f;
         }
         // apply modifiers, if any
+        beatOut.beatLane = 0;  // set default, to get overwritten below if needed
         for (int i = 1; i < value.Length; i++)
         {
             while (value.Contains('r'))  // there should only be one 'r' but additional ones don't change whether it's a rest or not
             {
                 beatOut.isRest = true;
             }
-            
+
+            while (value.Contains('^'))  // there should only be one 'r' but additional ones don't change whether it's a rest or not
+            {
+                beatOut.beatLane = 1;
+            }
+
         }
         
         beatOut.beatDuration = beat;

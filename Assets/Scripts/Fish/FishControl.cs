@@ -8,13 +8,10 @@ public class BeatObject : MonoBehaviour
     private int beatType;
     [HideInInspector] public int beatLane;
 
-    public static event Action Beep;
-    public static event Action Boop;
+    public event Action<BeatEvent> Beep;
+    public event Action<BeatEvent> Boop;
 
     private bool pause;
-
-    public float colliderSize;
-    public float beatZoneSize;
 
     // Support ASCII text for body
     [SerializeField] private TMP_Text text;
@@ -74,7 +71,7 @@ public class BeatObject : MonoBehaviour
     {
         beat = beatEvent;
         beatType = beat.beatType;
-        beatLane = beat.beatLane;
+        beatLane = beat.beat.beatLane;
         if (beatType == 0)
         {
             frames = fishFrames;
@@ -106,13 +103,13 @@ public class BeatObject : MonoBehaviour
     {
         if (beat.beepTime <= currentTime && !beat.beeped)
         {
-            Beep?.Invoke();
+            Beep?.Invoke(beat);
             beat.beeped = true;
         }
 
         if (beat.boopTime <= currentTime && !beat.booped)
         {
-            Boop?.Invoke();
+            Boop?.Invoke(beat);
             beat.booped = true;
         }
     }

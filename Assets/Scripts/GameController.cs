@@ -471,13 +471,13 @@ public class GameController : MonoBehaviour
 
     public void GameOverFinish()
     {
-
+        double currTime = AudioSettings.dspTime;
         string playerInfoText = playerInfoField.GetComponent<TMP_InputField>().text;
         string attentionText = attentionField.GetComponent<TMP_InputField>().text;
         string generalNotesText = postNotesField.GetComponent<TMP_InputField>().text;
-        EventLogger.LogEvent("Session", "Player Information", playerInfoText);
-        EventLogger.LogEvent("Session", "Attention", attentionText);
-        EventLogger.LogEvent("Session", "Postsession Notes", generalNotesText);
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Player Information", playerInfoText));
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Attention", attentionText));
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Postsession Notes", generalNotesText));
 
         gameOverPanel.SetActive(false);
         EventLogger.StopLog();

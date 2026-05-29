@@ -158,21 +158,24 @@ public class WheelSession : MonoBehaviour
         }
         EventLogger.SetLogFilePath(logFilePath);
         EventLogger.StartLog();
-        EventLogger.LogEvent("Game", "Version", Application.version);
-        EventLogger.LogEvent("Game", "App", Application.productName);
-        EventLogger.LogEvent("Game", "Game", GameType);
-        EventLogger.LogEvent("Game", "Fixed Timestep Precise", cfg.timeStepPrecise.ToString());
+        double currTime = AudioSettings.dspTime;
+        EventLogger.StartSession(currTime);
+        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Version", Application.version));
+        EventLogger.LogStruct(EventLogItem.GameData(currTime, "App", Application.productName));
+        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Game Type", GameType));
+        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Fixed Timestep Precise", cfg.timeStepPrecise.ToString()));
         float fixedTimestep = TimeUtil.fixedDeltaTime;
-        EventLogger.LogEvent("Game", "Fixed Timestep Slow", fixedTimestep.ToString());
-        EventLogger.LogEvent("Session", "Animal", AnimalName);
-        //EventLogger.LogEvent("Session", "Attention", attentionText);
-        EventLogger.LogEvent("Session", "Presession Notes", cfg.preNotesText);
-        EventLogger.LogEvent("Session", "LRS Duration", LRSDuration.ToString());
-        EventLogger.LogEvent("Session", "Target Width", targetZoneWidth.ToString());
+        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Fixed Timestep Slow", fixedTimestep.ToString()));
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Animal", AnimalName));
+        //EventLogger.LogData("Session", "Attention", attentionText);
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Presession Notes", cfg.preNotesText));
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "LRS Duration", LRSDuration.ToString()));
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Target Width", targetZoneWidth.ToString()));
 
-        EventLogger.LogEvent("Session", "Phase", sessionNumber);
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Phase", sessionNumber));
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogEvent("Session", "Session Start", timestamp);
+        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Session Start", timestamp)); 
+        
 
         score = 0;
         trialIsRunning = false;
@@ -199,16 +202,16 @@ public class WheelSession : MonoBehaviour
     {
         // store trial info in data file
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogEvent("Trial", "Trial " + (currTrial + 1) + " started", timestamp);
+        EventLogger.LogData("Trial", "Trial " + (currTrial + 1) + " started", timestamp);
 
-        EventLogger.LogEvent("Trial Param", "Level", trials[currTrial].level.ToString());
-        EventLogger.LogEvent("Trial Param", "Wheel Tempo", trials[currTrial].wheelSpeed.ToString());
+        EventLogger.LogData("Trial Param", "Level", trials[currTrial].level.ToString());
+        EventLogger.LogData("Trial Param", "Wheel Tempo", trials[currTrial].wheelSpeed.ToString());
         string eventList = string.Join(", ", trials[currTrial].eventList);
-        EventLogger.LogEvent("Trial Param", "Event List", eventList);
-        EventLogger.LogEvent("Trial Param", "Max Beats", trials[currTrial].beatMax.ToString());
-        EventLogger.LogEvent("Trial Param", "Target Score", trials[currTrial].targetScore.ToString());
-        EventLogger.LogEvent("Trial Param", "Safe Zone Size", trials[currTrial].colliderSize.ToString());
-        EventLogger.LogEvent("Trial Param", "Beat Zone Size", trials[currTrial].beatZoneSize.ToString());
+        EventLogger.LogData("Trial Param", "Event List", eventList);
+        EventLogger.LogData("Trial Param", "Max Beats", trials[currTrial].beatMax.ToString());
+        EventLogger.LogData("Trial Param", "Target Score", trials[currTrial].targetScore.ToString());
+        EventLogger.LogData("Trial Param", "Safe Zone Size", trials[currTrial].colliderSize.ToString());
+        EventLogger.LogData("Trial Param", "Beat Zone Size", trials[currTrial].beatZoneSize.ToString());
 
         // initiate wheel and eventBoxes
         Wheel.wheelTempo = trials[currTrial].wheelSpeed;
@@ -255,7 +258,7 @@ public class WheelSession : MonoBehaviour
     {
         // LRS has been triggered
         if (pause) return;
-        EventLogger.LogEvent("Feedback", "LRS initiated");
+        EventLogger.LogData("Feedback", "LRS initiated");
         pause = true;
         //LRSImage.enabled = true; // Enable the blackout image
         Wheel.StopSpin();
@@ -269,7 +272,7 @@ public class WheelSession : MonoBehaviour
     {
         // resume after pausing
         if (!pause) return;
-        EventLogger.LogEvent("Feedback", "LRS ended");
+        EventLogger.LogData("Feedback", "LRS ended");
         pause = false;
         //LRSImage.enabled = false; // Disable the blackout image
 
@@ -325,13 +328,13 @@ public class WheelSession : MonoBehaviour
 
                 }
                 //tapAngles.Add(tapPhase);
-                //EventLogger.LogEvent("Debug", "Tap Phase", tapPhase.ToString());
+                //EventLogger.LogData("Debug", "Tap Phase", tapPhase.ToString());
 
                 // Classify the tap
                 if (beatZoneContact && !booped)
                 {
                     // hit in beat zone, score point
-                    EventLogger.LogEvent("Response", "Hit");
+                    EventLogger.LogData("Response", "Hit");
                     booped = true;
                     if (beatZoneObject != null)
                     {
@@ -357,7 +360,7 @@ public class WheelSession : MonoBehaviour
                 else if (safeZoneContact && !booped)
                 {
                     // hit in safe zone, no score change
-                    EventLogger.LogEvent("Response", "Safe");
+                    EventLogger.LogData("Response", "Safe");
                     booped = true;
                     currLives = defaultLives;
                     UpdateLives(currLives);  // reset lives to max
@@ -373,11 +376,11 @@ public class WheelSession : MonoBehaviour
                     if (safeZoneContact || beatZoneContact)
                     {
                         // in the safeZone or beatZone but not counted as hit
-                        EventLogger.LogEvent("Response", "Miss (already hit)");
+                        EventLogger.LogData("Response", "Miss (already hit)");
                     }
                     else
                     {
-                        EventLogger.LogEvent("Response", "Miss");
+                        EventLogger.LogData("Response", "Miss");
                     }
 
                     if (score > 0)
@@ -423,7 +426,7 @@ public class WheelSession : MonoBehaviour
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepSlow;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepSlow * 3;
         trialIsRunning = false;
-        EventLogger.LogEvent("Trial", "Trial " + (currTrial + 1) + " ended");
+        EventLogger.LogData("Trial", "Trial " + (currTrial + 1) + " ended");
         Wheel.Clear();
         Wheel.Resize();
         beatZoneContact = false;
@@ -594,7 +597,7 @@ public class WheelSession : MonoBehaviour
                 wheelAngle = 360.0 - wheelAngle;
             }
             nextTick = tapTime + wheelAngle / (Wheel.wheelTempo * 360.0);
-            //EventLogger.LogEvent("Debug", "Next Tick", nextTick.ToString());
+            //EventLogger.LogData("Debug", "Next Tick", nextTick.ToString());
             prevTick = nextTick - Wheel.eventList[lastEventNum] / (Wheel.wheelTempo * Wheel.SumArray(Wheel.eventList));
         }
         else
@@ -712,7 +715,7 @@ public class WheelSession : MonoBehaviour
 
     private void WindowContactOn()
     {
-        EventLogger.LogEvent("Beat", "Beat safe window start");
+        EventLogger.LogData("Beat", "Beat safe window start");
         eventCount++;
 
         safeZoneObject = Target.safeZone;
@@ -723,7 +726,7 @@ public class WheelSession : MonoBehaviour
 
     private void WindowContactOff()
     {
-        EventLogger.LogEvent("Beat", "Beat safe window end");
+        EventLogger.LogData("Beat", "Beat safe window end");
         safeZoneContact = false;
         if (!booped)  // If beat passes without a tap, reset score
         {
@@ -738,7 +741,7 @@ public class WheelSession : MonoBehaviour
 
     private void BeatContact()
     {
-        EventLogger.LogEvent("Beat", "Beat tick");
+        EventLogger.LogData("Beat", "Beat tick");
         if (int.Parse(sessionNumber) > 0)
         {
             audioSource.PlayOneShot(tickSound);
@@ -755,14 +758,14 @@ public class WheelSession : MonoBehaviour
 
     private void BeatZoneContactOn()
     {
-        EventLogger.LogEvent("Beat", "Beat zone start");
+        EventLogger.LogData("Beat", "Beat zone start");
         beatZoneContact = true;
         beatZoneObject = Target.beatZone;
     }
 
     private void BeatZoneContactOff()
     {
-        EventLogger.LogEvent("Beat", "Beat zone end");
+        EventLogger.LogData("Beat", "Beat zone end");
         beatZoneContact = false;
     }
 }

@@ -32,11 +32,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1144589303933762896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0, y: 0.5}
+  m_AnchoredPosition: {x: 0.00001335144, y: 0}
   m_SizeDelta: {x: 6.5, y: 1.5}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0.5}
 --- !u!23 &5583290447951113397
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -140,7 +140,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -216,9 +216,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00001335144, y: 0.000004172325}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 7, y: 2}
+  m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &7031618049102603843
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -239,6 +239,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 735fe15a05b2d83479a32bff2568af4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishControl
-  colliderSize: 0
-  beatZoneSize: 0
+  beatLane: 0
   text: {fileID: 3449450174209793998}

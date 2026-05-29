@@ -8,8 +8,112 @@ using System.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
 using TimeUtil = UnityEngine.Time;
+using UnityEngine.Audio;
 
-public class EventLogger
+public enum LogEventType
+{
+    Game,  // information about the game itself (version, app name, which game)
+    Session,  // Session information like animal, 
+    TrialParam,  // trial-specific parameters from the parameter file
+    Feedback,  // LRS feedback information
+    Beat,  // beat timing information
+    Response  // user-initiated event information
+}
+
+public struct EventLogItem
+{
+    public double RawDSPTime;  // raw dspTime, not referenced to session or trial start
+    public double? ScheduledTime;
+
+    public LogEventType Type;
+
+    public int? TrialIndex;
+
+    public int? Lane;
+    public int? BeatIndex;
+    public double? Phase;
+
+    public string EventMessage;
+    public string EventValue;
+
+    public static EventLogItem GameData(double rawDspTime, string eventMessage, string eventValue)
+    {
+        return new EventLogItem
+        {
+            RawDSPTime = rawDspTime,
+            Type = LogEventType.Game,
+            EventMessage = eventMessage,
+            EventValue = eventValue
+        };
+    }
+
+    public static EventLogItem SessionData(double rawDspTime, string eventMessage, string eventValue)
+    {
+        return new EventLogItem
+        {
+            RawDSPTime = rawDspTime,
+            Type = LogEventType.Session,
+            EventMessage = eventMessage,
+            EventValue = eventValue
+        };
+    }
+
+    public static EventLogItem TrialData(double rawDspTime, int trialIndex, string message, string value = "")
+    {
+        return new EventLogItem
+        {
+            Type = LogEventType.TrialParam,
+            RawDSPTime = rawDspTime,
+            TrialIndex = trialIndex,
+            EventMessage = message,
+            EventValue = value
+        };
+    }
+
+    public static EventLogItem Response(double rawDspTime, int trialIndex, int lane, string message, double phase)
+    {
+        
+        return new EventLogItem
+        {
+            Type = LogEventType.Response,
+            RawDSPTime = rawDspTime,
+            TrialIndex = trialIndex,
+            Lane = lane,
+            EventMessage = message,
+            Phase = phase,
+        };
+    }
+
+    public static EventLogItem Beat(double rawDspTime, double scheduledTime, int trialIndex, int beatIndex, int lane, string message)
+    {
+
+        return new EventLogItem
+        {
+            Type = LogEventType.Beat,
+            RawDSPTime = rawDspTime,
+            ScheduledTime = scheduledTime,
+            TrialIndex = trialIndex,
+            BeatIndex = beatIndex,
+            Lane = lane,
+            EventMessage = message
+        };
+    }
+
+    public static EventLogItem Feedback(double rawDspTime, int trialIndex, string message)
+    {
+
+        return new EventLogItem
+        {
+            Type = LogEventType.Feedback,
+            RawDSPTime = rawDspTime,
+            TrialIndex = trialIndex,
+            EventMessage = message
+        };
+    }
+
+}
+
+public static class EventLogger
 {
     // central handler for logging session events
 
@@ -19,15 +123,31 @@ public class EventLogger
     private static readonly CancellationTokenSource cts = new();
     private static Task logTask;
 
+    private static double sessionStartDspTime;
+    private static double trialStartDspTime;
+    private static double sessionStartReal;  // time from Time.realtimeSinceStartup
+
     public static void SetLogFilePath(string path)
     {
         logFilePath = path;
     }
 
-    public static void LogEvent(string eventType, string eventMessage, string eventValue=null)
+    public static void StartSession(double startTime)
+    {
+        sessionStartDspTime = startTime;
+        sessionStartReal = Time.realtimeSinceStartup;
+    }
+
+    public static void StartTrial(double startTime)
+    {
+        trialStartDspTime = startTime;
+    }
+
+    public static void LogData(string eventType, string eventMessage, string eventValue=null)
     {
         //string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
         double time = TimeUtil.fixedTimeAsDouble;  // fixedTimeAsDouble uses the physics timing rather than the frame timing
+        //double time = AudioSettings.dspTime;  // fixedTimeAsDouble uses the physics timing rather than the frame timing
         //var t = ReliableTime.Time;
         //var sec = t % 60f;
         //var min = Math.Floor(t) / 60f % 60f;
@@ -45,9 +165,66 @@ public class EventLogger
         //}
     }
 
+    
+    public static void LogStruct(EventLogItem log)
+    {
+        //string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        double sessionTime = log.RawDSPTime - sessionStartDspTime;
+        double trialTime;
+        if (log.Type == LogEventType.Game)
+        {
+            trialTime = 0;
+        }
+        else
+        {
+            trialTime = log.RawDSPTime - trialStartDspTime;
+        }
+        double realTime = Time.realtimeSinceStartup - sessionStartReal;
+        string line = 
+            $"{realTime}\t" +
+            $"{log.Type}\t" +
+            $"{sessionTime}\t" +
+            $"{log.TrialIndex}\t" +
+            $"{trialTime}\t" +
+            $"{log.Lane}\t" +
+            $"{log.BeatIndex}\t" +
+            $"{log.ScheduledTime}\t" +
+            $"{log.Phase}\t" +
+            $"{log.EventMessage}\t" +
+            $"{log.EventValue}";
+        
+        logQueue.Enqueue(line);
+
+    }
+
+    public static void LogEvent(double eventTime, string eventType, string eventMessage, string eventValue = null)
+    {
+        //string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        double time = TimeUtil.fixedTimeAsDouble;  // fixedTimeAsDouble uses the physics timing rather than the frame timing
+        //double time = AudioSettings.dspTime;  // fixedTimeAsDouble uses the physics timing rather than the frame timing
+
+        logQueue.Enqueue($"{time}\t{eventTime}\t{eventType}\t{eventMessage}\t{eventValue}");
+
+    }
+    
     public static void StartLog()
     {
         logTask = Task.Run(ProcessQueue, cts.Token);
+
+        string line =
+            "RealTime\t" +
+            "EventType\t" +
+            "SessionTime\t" +
+            "TrialIndex\t" +
+            "TrialTime\t" +
+            "Lane\t" +
+            "BeatIndex\t" +
+            "ScheduledTime\t" +
+            "Phase\t" +
+            "EventMessage\t" +
+            "EventValue";
+
+        logQueue.Enqueue(line);
     }
 
     public static void StopLog()

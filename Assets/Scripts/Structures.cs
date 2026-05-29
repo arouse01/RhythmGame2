@@ -13,10 +13,11 @@ public struct Beat
     public int beatNumber;
     public float beatDuration;
     public bool isRest;
+    public int beatLane;
 
 }
 
-public struct BeatEvent
+public class BeatEvent
 {
     public Beat beat;
     public int beatType;  // image - fish (0) or bird (1)

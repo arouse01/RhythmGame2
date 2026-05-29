@@ -54,11 +54,6 @@ public class AudioManager : MonoBehaviour
         immediateSource.clip = clip;
         immediateSource.PlayOneShot(clip);
     }
-
-    public void PauseAll()
-    {
-
-    }
     
     public void StopAll()
     {
