@@ -18,13 +18,13 @@ public class AudioManager : MonoBehaviour
 {
 
     [SerializeField] private AudioSource[] laneLSources;
-    [SerializeField] private AudioSource[] laneHSources;
+    //[SerializeField] private AudioSource[] laneHSources;
     [SerializeField] private AudioSource immediateSource;
 
     private int nextSourceL = 0;
-    private int nextSourceH = 0;
+    //private int nextSourceH = 0;
 
-    public void ScheduleBeatL(AudioClip clip, double dspTime)
+    public void ScheduleBeat(AudioClip clip, double dspTime)
     {
 
         AudioSource lSource = laneLSources[nextSourceL];
@@ -34,14 +34,14 @@ public class AudioManager : MonoBehaviour
         lSource.PlayScheduled(dspTime);
     }
 
-    public void ScheduleBeatH(AudioClip clip, double dspTime)
-    {
-        AudioSource hSource = laneHSources[nextSourceH];
-        nextSourceH = (nextSourceH + 1) % laneHSources.Length;
+    //public void ScheduleBeatH(AudioClip clip, double dspTime)
+    //{
+    //    AudioSource hSource = laneHSources[nextSourceH];
+    //    nextSourceH = (nextSourceH + 1) % laneHSources.Length;
 
-        hSource.clip = clip;
-        hSource.PlayScheduled(dspTime);
-    }
+    //    hSource.clip = clip;
+    //    hSource.PlayScheduled(dspTime);
+    //}
     
     //void PlayScheduled(AudioClip sound, double dspTime)
     //{
@@ -61,10 +61,10 @@ public class AudioManager : MonoBehaviour
         {
             source.Stop();
         }
-        foreach (AudioSource source in laneHSources)
-        {
-            source.Stop();
-        }
+        //foreach (AudioSource source in laneHSources)
+        //{
+        //    source.Stop();
+        //}
         immediateSource.Stop();
     }
 }

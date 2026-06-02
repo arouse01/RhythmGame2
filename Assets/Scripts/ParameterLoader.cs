@@ -341,7 +341,7 @@ public class ParameterLoader
                 float colliderSizeOut = float.Parse(splitLine[colliderSizeCol]);
                 float beatZoneSizeOut = float.Parse(splitLine[beatZoneSizeCol]);
 
-                Beat[] notes = ConvertNotes(eventListValues);  // noteStrength is currently unused - it's a placeholder for possible emphasis implementation
+                FishBeat[] notes = ConvertNotes(eventListValues);  // noteStrength is currently unused - it's a placeholder for possible emphasis implementation
 
                 FishTrialParameters currTrial = new()
                 {
@@ -370,22 +370,22 @@ public class ParameterLoader
         }
     }
 
-    private static Beat[] ConvertNotes(string[] notes)
+    private static FishBeat[] ConvertNotes(string[] notes)
     {
-        List<Beat> beatList = new();
+        List<FishBeat> beatList = new();
         
         foreach (string note in notes)
         {
             beatList.Add(GetBeat(note));
         }
-        Beat[] beatArray = beatList.ToArray();
+        FishBeat[] beatArray = beatList.ToArray();
         
         return beatArray;
     }
 
-    private static Beat GetBeat(string value)
+    private static FishBeat GetBeat(string value)
     {
-        Beat beatOut = new();
+        FishBeat beatOut = new();
 
         // get base note duration
         float beat = value[0] switch

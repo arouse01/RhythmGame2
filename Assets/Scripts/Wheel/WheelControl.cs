@@ -1,19 +1,21 @@
 //using System.Collections;
-//using System.Collections.Generic;
+using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 // settings and scripts for wheel object
 public class WheelControl : MonoBehaviour
 {
-
+    
     float rotSpeed; // rotation per second in degrees
     public float wheelTempo = 1;  // wheel rotations per second
     public GameObject arrow;
-    public GameObject eventBox; // prefab of eventBox
+    public EventBox eventBox; // prefab of eventBox
     public float[] eventList;
     public float colliderSize;
     public float beatZoneSize;
     public bool pause;
+    public float startAngle;
 
     public Color safeZoneColorDefault;
     public Color beatZoneColorDefault;
@@ -22,7 +24,7 @@ public class WheelControl : MonoBehaviour
     private float radius = 0.5f;
     public int segments = 100;
 
-    private EventBox[] boxes;
+    public List<EventBox> boxes;
     
     // Start is called before the first frame update
     void Start()
@@ -33,7 +35,7 @@ public class WheelControl : MonoBehaviour
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         //if (Input.GetMouseButtonDown(0))
         //{
@@ -46,8 +48,8 @@ public class WheelControl : MonoBehaviour
         } 
         else
         {
-            // Rotate at rotSpeed degrees per second
-            transform.RotateAround(this.transform.position, Vector3.forward, rotSpeed * Time.deltaTime);
+            //// Rotate at rotSpeed degrees per second
+            //transform.RotateAround(this.transform.position, Vector3.forward, rotSpeed * Time.deltaTime);
         }
         
     }
@@ -79,26 +81,14 @@ public class WheelControl : MonoBehaviour
         pause = true;
         // Place event boxes first because their size/position is linked to the wheel size/position, so resizing the wheel after will resize the event boxes
         PlaceEventBoxes();
-        boxes = FindObjectsByType<EventBox>();  // Updated from FindObjectsOfType (now deprecated)
+        //boxes = FindObjectsByType<EventBox>();  // Updated from FindObjectsOfType (now deprecated)
         Resize();
         transform.rotation = Quaternion.identity;  // Reset wheel position to zero  
-        float startAngle;
-        if (wheelTempo == 0)
-        {
-            startAngle = 0;
-        }
-        else if (wheelTempo < 0.01f)
-        {
-            startAngle = 2.5f;
-        }
-        else if (wheelTempo < 0.1f)
-        {
-            startAngle = 5;
-        }
-        else
-        {
-            startAngle = 10;
-        }
+        //float startAngle;
+        if (wheelTempo == 0) {startAngle = 0;}
+        else if (wheelTempo < 0.01f) {startAngle = 2.5f;}
+        else if (wheelTempo < 0.1f) {startAngle = 5;}
+        else {startAngle = 10;}
             
             
         transform.Rotate(0.0f, 0.0f, -startAngle, Space.Self);  // Set starting point to just before the first beat
@@ -174,21 +164,30 @@ public class WheelControl : MonoBehaviour
     void PlaceEventBoxes()
     {
         // Calculate total fraction of event intervals
-        float intervalSum = SumArray(eventList);
+        float intervalSum = Stats.SumArray(eventList);
         float angleStep = 360 / intervalSum;
 
         float currAngle = 90;  
         int j = 0;
+        boxes?.Clear();
+        boxes = new();
+
         foreach (float i in eventList)
         {
             j++;
 
+            WheelBeat currBeat = new()
+            {
+                beatNumber = j,
+                beatAngle = currAngle
+            };
             // Instantiate the prefab at the calculated position
             float wheelY = transform.position[1];
-            GameObject newObject = Instantiate(eventBox, new Vector2(0, wheelY), Quaternion.identity);
+            EventBox newObject = Instantiate(eventBox, new Vector2(0, wheelY), Quaternion.identity);
             newObject.name = "EventBox_" + j.ToString();
-            newObject.GetComponent<EventBox>().angle = currAngle;
-            
+            newObject.Initialize(currBeat);
+            //newObject.GetComponent<EventBox>().angle = currAngle;
+            //newObject.GetComponent<EventBox>().beatIndex = j;
             newObject.transform.parent = transform;
 
             currAngle -= i * angleStep; // negative because the wheel spins counterclockwise
@@ -199,18 +198,11 @@ public class WheelControl : MonoBehaviour
 
             // set colors
             newObject.GetComponent<EventBox>().ResetColors(safeZoneColorDefault, beatZoneColorDefault);
-        }
-        //ResizeEventBoxes();
-    }
 
-    //public void ResizeEventBoxes()
-    //{
-    //    boxes = FindObjectsOfType<EventBox>();
-    //    foreach (EventBox box in boxes)
-    //    {
-    //        box.ResetShapeWedge();
-    //    }
-    //}
+            boxes.Add(newObject);
+        }
+        
+    }
 
     public void ResetBoxColors()
     {
@@ -226,13 +218,5 @@ public class WheelControl : MonoBehaviour
         return transform.eulerAngles.z;
     }
     
-    public float SumArray(float[] toBeSummed)
-    {
-        float sum = 0;
-        foreach (float i in toBeSummed)
-        {
-            sum += i;
-        }
-        return sum;
-    }
+    
 }

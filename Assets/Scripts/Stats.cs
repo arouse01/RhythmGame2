@@ -3,7 +3,16 @@ using UnityEngine;
 
 public static class Stats 
 {
-    
+
+    public static float SumArray(float[] toBeSummed)
+    {
+        float sum = 0;
+        foreach (float i in toBeSummed)
+        {
+            sum += i;
+        }
+        return sum;
+    }
 
     public static double CircMean(List<double> angleList, bool returnRad = true)
     {

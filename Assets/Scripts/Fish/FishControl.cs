@@ -4,12 +4,12 @@ using System;
 
 public class BeatObject : MonoBehaviour
 {
-    public BeatEvent beat;
+    public FishBeatEvent beat;
     private int beatType;
     [HideInInspector] public int beatLane;
 
-    public event Action<BeatEvent> Beep;
-    public event Action<BeatEvent> Boop;
+    public event Action<FishBeatEvent> Beep;
+    public event Action<FishBeatEvent> Boop;
 
     private bool pause;
 
@@ -67,7 +67,7 @@ public class BeatObject : MonoBehaviour
         
     }
 
-    public void Initialize(BeatEvent beatEvent)
+    public void Initialize(FishBeatEvent beatEvent)
     {
         beat = beatEvent;
         beatType = beat.beatType;

@@ -20,7 +20,7 @@ public enum LogEventType
     Response  // user-initiated event information
 }
 
-public struct EventLogItem
+public struct LogItem
 {
     public double RawDSPTime;  // raw dspTime, not referenced to session or trial start
     public double? ScheduledTime;
@@ -36,9 +36,9 @@ public struct EventLogItem
     public string EventMessage;
     public string EventValue;
 
-    public static EventLogItem GameData(double rawDspTime, string eventMessage, string eventValue)
+    public static LogItem GameData(double rawDspTime, string eventMessage, string eventValue)
     {
-        return new EventLogItem
+        return new LogItem
         {
             RawDSPTime = rawDspTime,
             Type = LogEventType.Game,
@@ -47,9 +47,9 @@ public struct EventLogItem
         };
     }
 
-    public static EventLogItem SessionData(double rawDspTime, string eventMessage, string eventValue)
+    public static LogItem SessionData(double rawDspTime, string eventMessage, string eventValue)
     {
-        return new EventLogItem
+        return new LogItem
         {
             RawDSPTime = rawDspTime,
             Type = LogEventType.Session,
@@ -58,9 +58,9 @@ public struct EventLogItem
         };
     }
 
-    public static EventLogItem TrialData(double rawDspTime, int trialIndex, string message, string value = "")
+    public static LogItem TrialData(double rawDspTime, int trialIndex, string message, string value = "")
     {
-        return new EventLogItem
+        return new LogItem
         {
             Type = LogEventType.TrialParam,
             RawDSPTime = rawDspTime,
@@ -70,10 +70,10 @@ public struct EventLogItem
         };
     }
 
-    public static EventLogItem Response(double rawDspTime, int trialIndex, int lane, string message, double phase)
+    public static LogItem Response(double rawDspTime, int trialIndex, int lane, string message, double phase)
     {
         
-        return new EventLogItem
+        return new LogItem
         {
             Type = LogEventType.Response,
             RawDSPTime = rawDspTime,
@@ -84,10 +84,10 @@ public struct EventLogItem
         };
     }
 
-    public static EventLogItem Beat(double rawDspTime, double scheduledTime, int trialIndex, int beatIndex, int lane, string message)
+    public static LogItem Beat(double rawDspTime, double scheduledTime, int trialIndex, int beatIndex, int lane, string message)
     {
 
-        return new EventLogItem
+        return new LogItem
         {
             Type = LogEventType.Beat,
             RawDSPTime = rawDspTime,
@@ -99,10 +99,10 @@ public struct EventLogItem
         };
     }
 
-    public static EventLogItem Feedback(double rawDspTime, int trialIndex, string message)
+    public static LogItem Feedback(double rawDspTime, int trialIndex, string message)
     {
 
-        return new EventLogItem
+        return new LogItem
         {
             Type = LogEventType.Feedback,
             RawDSPTime = rawDspTime,
@@ -166,7 +166,7 @@ public static class EventLogger
     }
 
     
-    public static void LogStruct(EventLogItem log)
+    public static void Log(LogItem log)
     {
         //string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
         double sessionTime = log.RawDSPTime - sessionStartDspTime;

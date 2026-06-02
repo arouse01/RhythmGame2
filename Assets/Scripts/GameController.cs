@@ -199,7 +199,7 @@ public class GameController : MonoBehaviour
 
         if (debugMode)
         {
-            DebugModeStart(1, 1);
+            DebugModeStart(0, 2);
         }
     }
 
@@ -475,9 +475,9 @@ public class GameController : MonoBehaviour
         string playerInfoText = playerInfoField.GetComponent<TMP_InputField>().text;
         string attentionText = attentionField.GetComponent<TMP_InputField>().text;
         string generalNotesText = postNotesField.GetComponent<TMP_InputField>().text;
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Player Information", playerInfoText));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Attention", attentionText));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Postsession Notes", generalNotesText));
+        EventLogger.Log(LogItem.SessionData(currTime, "Player Information", playerInfoText));
+        EventLogger.Log(LogItem.SessionData(currTime, "Attention", attentionText));
+        EventLogger.Log(LogItem.SessionData(currTime, "Postsession Notes", generalNotesText));
 
         gameOverPanel.SetActive(false);
         EventLogger.StopLog();

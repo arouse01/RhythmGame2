@@ -8,7 +8,7 @@ public class LevelMetadata
     public bool hide;
 }
 
-public struct Beat
+public struct FishBeat
 {
     public int beatNumber;
     public float beatDuration;
@@ -17,9 +17,9 @@ public struct Beat
 
 }
 
-public class BeatEvent
+public class FishBeatEvent
 {
-    public Beat beat;
+    public FishBeat beat;
     public int beatType;  // image - fish (0) or bird (1)
     public int beatLane;  // bottom (0) or top (1)
     public double beepTime; // in dsptime, relative to game start time
@@ -31,6 +31,32 @@ public class BeatEvent
     public double spawnTime;  // in dsptime, relative to game start time
     public double destroyTime;  // in dsptime, relative to game start time
     public float spawnX;
+}
+
+public struct WheelBeat
+{
+    public int beatNumber;
+    public float beatAngle;
+    //public GameObject eventBox;
+}
+
+public class WheelBeatEvent
+{
+    public WheelBeat Beat;
+    public EventBox EventBox;
+    public int BeatIndex;
+    public double BoopTime;  // in dsptime, relative to game start time
+    public bool Booped;  // Passed boop line and triggered it
+    public bool Bopped;  // User hit the beat
+    public double SafeZoneStartTime;
+    public bool EnteredSafeZone;
+    public double SafeZoneEndTime;
+    public bool ExitedSafeZone;
+    public double BeatZoneStartTime;
+    public bool EnteredBeatZone;
+    public double BeatZoneEndTime;
+    public bool ExitedBeatZone;
+
 }
 
 [System.Serializable]
@@ -51,7 +77,7 @@ public class FishTrialParameters
     public float tempo;
     public double beepBoopTime;
     public bool beepActive;
-    public Beat[] fishEventList;
+    public FishBeat[] fishEventList;
     public int beatMax;
     public int targetScore;
     public float colliderSize;

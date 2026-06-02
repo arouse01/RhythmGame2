@@ -63,8 +63,8 @@ public class FishSession : MonoBehaviour
     private int level;  // current level
     public float tempo;  // trial tempo (in bpm)
     //private bool boopedWater;  // whether the current eventBox has been hit
-    private bool boopedAir;  // whether the current eventBox has been hit
-    private int eventCount;  // total number of contact events (beats)
+    //private bool boopedAir;  // whether the current eventBox has been hit
+    //private int eventCount;  // total number of contact events (beats)
     //private AudioSource audioSource;
     private int numTrials;  // number of trials
     private int currTrial; // index of current trial
@@ -89,11 +89,11 @@ public class FishSession : MonoBehaviour
     private float safeZoneStartX;
     private float safeZoneEndX;
 
-    private Beat[] fishEventListRaw;
-    private List<BeatEvent> fishBeats;  // beat onsets for current trial
+    private FishBeat[] fishEventListRaw;
+    private List<FishBeatEvent> fishBeats;  // beat onsets for current trial
     private List<BeatObject> activeBeats;
-    private List<BeatEvent> remainingBeats;
-    private List<BeatEvent> birdBeats;  // beat onsets for current trial
+    private List<FishBeatEvent> remainingBeats;
+    private List<FishBeatEvent> birdBeats;  // beat onsets for current trial
     private List<double> tickTimes = new();
     private List<double> tapTimes = new();
     private List<double> tapAngles = new();
@@ -130,7 +130,7 @@ public class FishSession : MonoBehaviour
 
         trialIsRunning = false;
         score = 0;
-        eventCount = 0;
+        //eventCount = 0;
 
         pause = false;
         
@@ -239,25 +239,25 @@ public class FishSession : MonoBehaviour
         EventLogger.StartLog();
         double currTime = AudioSettings.dspTime;
         EventLogger.StartSession(currTime);
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Version", Application.version));
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "App", Application.productName));
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Game Type", GameType));
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Fixed Timestep Precise", cfg.timeStepPrecise.ToString()));
+        EventLogger.Log(LogItem.GameData(currTime, "Version", Application.version));
+        EventLogger.Log(LogItem.GameData(currTime, "App", Application.productName));
+        EventLogger.Log(LogItem.GameData(currTime, "Game Type", GameType));
+        EventLogger.Log(LogItem.GameData(currTime, "Fixed Timestep Precise", cfg.timeStepPrecise.ToString()));
         float fixedTimestep = TimeUtil.fixedDeltaTime;
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Fixed Timestep Slow", fixedTimestep.ToString()));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Animal", AnimalName));
+        EventLogger.Log(LogItem.GameData(currTime, "Fixed Timestep Slow", fixedTimestep.ToString()));
+        EventLogger.Log(LogItem.SessionData(currTime, "Animal", AnimalName));
         //EventLogger.LogData("Session", "Attention", attentionText);
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Presession Notes", cfg.preNotesText));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "LRS Duration", LRSDuration.ToString()));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Target Width", targetZoneWidth.ToString()));
+        EventLogger.Log(LogItem.SessionData(currTime, "Presession Notes", cfg.preNotesText));
+        EventLogger.Log(LogItem.SessionData(currTime, "LRS Duration", LRSDuration.ToString()));
+        EventLogger.Log(LogItem.SessionData(currTime, "Target Width", targetZoneWidth.ToString()));
 
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Phase", sessionNumber));
+        EventLogger.Log(LogItem.SessionData(currTime, "Phase", sessionNumber));
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Session Start", timestamp));
+        EventLogger.Log(LogItem.SessionData(currTime, "Session Start", timestamp));
 
         score = 0;
         trialIsRunning = false;
-        eventCount = 0;
+        //eventCount = 0;
 
         pause = false;
 
@@ -300,7 +300,7 @@ public class FishSession : MonoBehaviour
         colliderSize = trials[currTrial].colliderSize;
         beatZoneSize = trials[currTrial].beatZoneSize;
         level = trials[currTrial].level;
-        eventCount = 0;
+        //eventCount = 0;
         score = 0;
         mistakeCount = 0;
         //lastEventNum = 0;
@@ -339,16 +339,16 @@ public class FishSession : MonoBehaviour
         startDSPtime = AudioSettings.dspTime;
         EventLogger.StartTrial(startDSPtime);
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Trial Started", timestamp));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Trial Started", timestamp));
 
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Level", trials[currTrial].level.ToString()));
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Swim Speed", trials[currTrial].tempo.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Level", trials[currTrial].level.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Swim Speed", trials[currTrial].tempo.ToString()));
         string eventList = string.Join(", ", trials[currTrial].fishEventList);  //TODO: figure out this calculation to properly log the beat timings
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Fish Event List", eventList));
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Max Beats", trials[currTrial].beatMax.ToString()));
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Target Score", trials[currTrial].targetScore.ToString()));
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Safe Zone Size", trials[currTrial].colliderSize.ToString()));
-        EventLogger.LogStruct(EventLogItem.TrialData(startDSPtime, currTrial, "Beat Zone Size", trials[currTrial].beatZoneSize.ToString()));       
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Fish Event List", eventList));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Max Beats", trials[currTrial].beatMax.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Target Score", trials[currTrial].targetScore.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Safe Zone Size", trials[currTrial].colliderSize.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Beat Zone Size", trials[currTrial].beatZoneSize.ToString()));       
 
         trialIsRunning = true;
 
@@ -403,7 +403,8 @@ public class FishSession : MonoBehaviour
     {
         // LRS has been triggered
         if (pause) return;
-        EventLogger.LogStruct(EventLogItem.Feedback(startDSPtime, currTrial, "LRS initiated"));
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Feedback(currTime, currTrial, "LRS initiated"));
         pause = true;
         AudioListener.pause = true;  // this pauses the DSPtime as well
         //LRSImage.enabled = true; // Enable the blackout image
@@ -418,7 +419,8 @@ public class FishSession : MonoBehaviour
     {
         // resume after pausing
         if (!pause) return;
-        EventLogger.LogStruct(EventLogItem.Feedback(startDSPtime, currTrial, "LRS ended"));
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Feedback(currTime, currTrial, "LRS ended"));
         pause = false;
         //LRSImage.enabled = false; // Disable the blackout image
         AudioListener.pause = false;
@@ -438,7 +440,7 @@ public class FishSession : MonoBehaviour
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepSlow;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepSlow * 3;
         trialIsRunning = false;
-        EventLogger.LogStruct(EventLogItem.TrialData(AudioSettings.dspTime, currTrial, "Trial Ended"));
+        EventLogger.Log(LogItem.TrialData(AudioSettings.dspTime, currTrial, "Trial Ended"));
         ClearFish();
 
         // pause so the score screen doesn't get skipped
@@ -519,19 +521,20 @@ public class FishSession : MonoBehaviour
         
         if (!pause)
         {
-            player.Dive();
             double tapTimeRaw = AudioSettings.dspTime;
             double tapTime = tapTimeRaw - startDSPtime;
             tapTimes.Add(tapTime);
+
+            player.Dive();
 
             // calculate phase angle of tap
             // Problematic if tapping before first tick - no known time point to determine beat onset
             // But we could get current wheel angle and calculate angle of next beat...
             // On the other hand, can you really argue for the angle of taps before the first tick being meaningful in relation to the beat construct in any way?
             // Maybe if they're ahead of the first tick but close? Then it's a question of accuracy, but still likely before any construct of beat is created 
-            
+
             // first, get index of next beat and previous beat
-            
+
             double tapPhase = GetAngle(tapTime);
             tapAngles.Add(tapPhase);
             
@@ -542,21 +545,21 @@ public class FishSession : MonoBehaviour
             
             if (nearestIndex < 0)
             {
-                EventLogger.LogStruct(EventLogItem.Response(tapTimeRaw, currTrial, 0, "Miss (early)", tapPhase));
+                EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Miss (early)", tapPhase));
             }
             else
             {
 
             
                 // Classify the tap
-                BeatEvent nearestBeat = fishBeats[nearestIndex];
+                FishBeatEvent nearestBeat = fishBeats[nearestIndex];
                 BeatObject nearestBeatObj = activeBeats.Find(beat => beat.beat == nearestBeat);
 
                 float beatLocation = (float)(nearestBeat.spawnX - (tapTime - nearestBeat.spawnTime) * nearestBeat.speed);
                 if (beatZoneStartX >= beatLocation && beatZoneEndX <= beatLocation && !nearestBeat.bopped)  // hit in beat zone, score point
                 {
 
-                    EventLogger.LogStruct(EventLogItem.Response(tapTimeRaw, currTrial, 0, "Hit", tapPhase));
+                    EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Hit", tapPhase));
                     nearestBeat.bopped = true;
                     nearestBeatObj.Eaten();
 
@@ -584,7 +587,7 @@ public class FishSession : MonoBehaviour
                 else if (safeZoneStartX >= beatLocation && safeZoneEndX <= beatLocation && !nearestBeat.bopped)  // hit in safe zone, no score change but no penalty
                 {
 
-                    EventLogger.LogStruct(EventLogItem.Response(tapTimeRaw, currTrial, 0, "Safe", tapPhase));
+                    EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Safe", tapPhase));
                     nearestBeat.bopped = true;
                     currLives = defaultLives;
                     UpdateLives(currLives);  // reset lives to max
@@ -601,11 +604,11 @@ public class FishSession : MonoBehaviour
                         beatZoneStartX <= beatLocation && beatZoneEndX >= beatLocation)
                     {
                         // in the safeZone or beatZone but not counted as hit
-                        EventLogger.LogStruct(EventLogItem.Response(tapTimeRaw, currTrial, 0, "Miss (already hit)", tapPhase));
+                        EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Miss (already hit)", tapPhase));
                     }
                     else
                     {
-                        EventLogger.LogStruct(EventLogItem.Response(tapTimeRaw, currTrial, 0, "Miss", tapPhase));
+                        EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Miss", tapPhase));
                     }
 
                     if (score > 0)
@@ -880,7 +883,7 @@ public class FishSession : MonoBehaviour
         for (int i = 0; i < eventMax; i++)
         {
             j = i % fishEventListRaw.Length;  // so we can cycle through the raw list repeatedly
-            Beat beat = fishEventListRaw[j];
+            FishBeat beat = fishEventListRaw[j];
             beat.beatNumber = i;
             double currDuration = beat.beatDuration * secPerBeat;
             spawnOnset += currDuration;  // increment onset time 
@@ -895,7 +898,7 @@ public class FishSession : MonoBehaviour
             if (!beat.isRest)
             {
                 // only add the beat to the list if it's an actual beat instead of a rest
-                BeatEvent currBeat = new()
+                FishBeatEvent currBeat = new()
                 {
                     beat = beat,
                     beatType = 0,
@@ -985,14 +988,14 @@ public class FishSession : MonoBehaviour
 
     void ScheduleBoopAudio(int beatLane, double dspTime)
     {
-
+        // Split in case high and low lanes have different sounds
         if (beatLane == 0)
         {
-            audioManager.ScheduleBeatL(tickSound, dspTime);
+            audioManager.ScheduleBeat(tickSound, dspTime);
         } 
         else if (beatLane == 1)
         {
-            audioManager.ScheduleBeatH(tickSound, dspTime);
+            audioManager.ScheduleBeat(tickSound, dspTime);
         }
     }
 
@@ -1188,20 +1191,20 @@ public class FishSession : MonoBehaviour
     //    //Wheel.ResetBoxColors();  // Reset all EventBox pieces to their default colors, just in case one got colored weird for some reason
     //}
 
-    private void BeatContact(BeatEvent beat)
+    private void BeatContact(FishBeatEvent beat)
     {
         double timeRaw = AudioSettings.dspTime;
-        EventLogger.LogStruct(EventLogItem.Beat(timeRaw, beat.boopTime, currTrial, beat.beat.beatNumber, beat.beatLane, "Boop tick"));
+        EventLogger.Log(LogItem.Beat(timeRaw, beat.boopTime, currTrial, beat.beat.beatNumber, beat.beatLane, "Boop tick"));
         
         prevBeatIndex++;
         nextBeatIndex++;
         
     }
 
-    private void BeepContact(BeatEvent beat)
+    private void BeepContact(FishBeatEvent beat)
     {
         double timeRaw = AudioSettings.dspTime;
-        EventLogger.LogStruct(EventLogItem.Beat(timeRaw, beat.beepTime, currTrial, beat.beat.beatNumber, beat.beatLane, "Beep tick"));
+        EventLogger.Log(LogItem.Beat(timeRaw, beat.beepTime, currTrial, beat.beat.beatNumber, beat.beatLane, "Beep tick"));
 
     }
 

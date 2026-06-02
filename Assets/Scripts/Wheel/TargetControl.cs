@@ -11,7 +11,7 @@ public class TargetControl : MonoBehaviour
     public Collider beatZone;
     public Collider safeZone;
 
-    Animation anim;
+    Animator anim;
 
     // Events to trigger GameController
     public static event Action OnContactStart;
@@ -36,7 +36,7 @@ public class TargetControl : MonoBehaviour
     {
         triangle = transform.Find("Triangle");
         
-        anim = triangle.GetComponent<Animation>();
+        anim = triangle.GetComponent<Animator>();
 
         InitializeTarget();
     }
@@ -167,7 +167,8 @@ public class TargetControl : MonoBehaviour
 
     public void Bounce()
     {
-        anim.Play("Bounce");
+        anim.SetTrigger("TriggerBounce");
+        //anim.Play("Bounce");
     }
 
 }

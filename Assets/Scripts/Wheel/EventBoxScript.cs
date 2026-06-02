@@ -6,6 +6,8 @@ using UnityEngine;
 public class EventBox : MonoBehaviour
 {
     public float angle = 0;
+    public int beatIndex;
+    public WheelBeat wheelBeat;
     public float colliderSize = 5;
     public float beatZoneSize = 2;
     public float outerRadius = 2f;
@@ -126,15 +128,22 @@ public class EventBox : MonoBehaviour
     }
 
 
-    void AttachToParent()
+    public void Initialize(WheelBeat beat)
     {
-        // If a parent is specified, attach the segment to it and set the position and rotation.
-        if (parentObject != null)
-        {
-            transform.SetParent(parentObject.transform);
-            transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-        }
+        wheelBeat = beat;
+        angle = beat.beatAngle;
+        beatIndex = beat.beatNumber;
     }
+    
+    //void AttachToParent()
+    //{
+    //    // If a parent is specified, attach the segment to it and set the position and rotation.
+    //    if (parentObject != null)
+    //    {
+    //        transform.SetParent(parentObject.transform);
+    //        transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+    //    }
+    //}
 
 
     public void SelfDestruct()

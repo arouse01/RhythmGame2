@@ -16,7 +16,8 @@ public class WheelSession : MonoBehaviour
 
     //private GameObject LRSDurationField;
     //private GameObject TargetWidthField;
-
+    double startDSPtime;
+    double currDSPtime;
     //private GameObject levelScoreObject;
     //private GameObject lifeMarkers;
 
@@ -44,6 +45,8 @@ public class WheelSession : MonoBehaviour
     private int level;  // current level
     private bool booped;  // whether the current eventBox has been hit
     private int eventCount;  // total number of contact events (beats)
+    private int prevBeatIndex;
+    private int nextBeatIndex;
     private AudioSource audioSource;
     private int numTrials;  // number of trials
     private int currTrial; // index of current trial
@@ -58,6 +61,7 @@ public class WheelSession : MonoBehaviour
     private Collider beatZoneObject;
     private Collider safeZoneObject;
 
+    private List<WheelBeatEvent> wheelBeats;
     private List<double> tickTimes = new();
     private List<double> tapTimes = new();
     private List<double> tapAngles = new();
@@ -93,13 +97,27 @@ public class WheelSession : MonoBehaviour
         Wheel.gameObject.SetActive(false);
         Target.gameObject.SetActive(false);
 
+        wheelBeats = new();
     }
 
     void Update()
     {
-        if (trialIsRunning && eventCount >= eventMax)
+        if (trialIsRunning)
         {
-            EndTrial(false);
+            currDSPtime = AudioSettings.dspTime - startDSPtime;
+
+            if (nextBeatIndex >= eventMax)
+            {
+                EndTrial(false);
+            }
+
+            //SpawnNewBeats(currDSPtime);
+            RotateWheel(currDSPtime);
+
+            UpdateBeats(currDSPtime);
+
+            //RemoveExpiredBeats(currDSPtime);
+
         }
 
     }
@@ -160,21 +178,21 @@ public class WheelSession : MonoBehaviour
         EventLogger.StartLog();
         double currTime = AudioSettings.dspTime;
         EventLogger.StartSession(currTime);
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Version", Application.version));
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "App", Application.productName));
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Game Type", GameType));
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Fixed Timestep Precise", cfg.timeStepPrecise.ToString()));
+        EventLogger.Log(LogItem.GameData(currTime, "Version", Application.version));
+        EventLogger.Log(LogItem.GameData(currTime, "App", Application.productName));
+        EventLogger.Log(LogItem.GameData(currTime, "Game Type", GameType));
+        EventLogger.Log(LogItem.GameData(currTime, "Fixed Timestep Precise", cfg.timeStepPrecise.ToString()));
         float fixedTimestep = TimeUtil.fixedDeltaTime;
-        EventLogger.LogStruct(EventLogItem.GameData(currTime, "Fixed Timestep Slow", fixedTimestep.ToString()));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Animal", AnimalName));
+        EventLogger.Log(LogItem.GameData(currTime, "Fixed Timestep Slow", fixedTimestep.ToString()));
+        EventLogger.Log(LogItem.SessionData(currTime, "Animal", AnimalName));
         //EventLogger.LogData("Session", "Attention", attentionText);
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Presession Notes", cfg.preNotesText));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "LRS Duration", LRSDuration.ToString()));
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Target Width", targetZoneWidth.ToString()));
+        EventLogger.Log(LogItem.SessionData(currTime, "Presession Notes", cfg.preNotesText));
+        EventLogger.Log(LogItem.SessionData(currTime, "LRS Duration", LRSDuration.ToString()));
+        EventLogger.Log(LogItem.SessionData(currTime, "Target Width", targetZoneWidth.ToString()));
 
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Phase", sessionNumber));
+        EventLogger.Log(LogItem.SessionData(currTime, "Phase", sessionNumber));
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogStruct(EventLogItem.SessionData(currTime, "Session Start", timestamp)); 
+        EventLogger.Log(LogItem.SessionData(currTime, "Session Start", timestamp)); 
         
 
         score = 0;
@@ -200,18 +218,17 @@ public class WheelSession : MonoBehaviour
 
     void StartTrial()
     {
-        // store trial info in data file
-        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        EventLogger.LogData("Trial", "Trial " + (currTrial + 1) + " started", timestamp);
+        
+        //EventLogger.LogData("Trial", "Trial " + (currTrial + 1) + " started", timestamp);
 
-        EventLogger.LogData("Trial Param", "Level", trials[currTrial].level.ToString());
-        EventLogger.LogData("Trial Param", "Wheel Tempo", trials[currTrial].wheelSpeed.ToString());
-        string eventList = string.Join(", ", trials[currTrial].eventList);
-        EventLogger.LogData("Trial Param", "Event List", eventList);
-        EventLogger.LogData("Trial Param", "Max Beats", trials[currTrial].beatMax.ToString());
-        EventLogger.LogData("Trial Param", "Target Score", trials[currTrial].targetScore.ToString());
-        EventLogger.LogData("Trial Param", "Safe Zone Size", trials[currTrial].colliderSize.ToString());
-        EventLogger.LogData("Trial Param", "Beat Zone Size", trials[currTrial].beatZoneSize.ToString());
+        //EventLogger.LogData("Trial Param", "Level", trials[currTrial].level.ToString());
+        //EventLogger.LogData("Trial Param", "Wheel Tempo", trials[currTrial].wheelSpeed.ToString());
+        //string eventList = string.Join(", ", trials[currTrial].eventList);
+        //EventLogger.LogData("Trial Param", "Event List", eventList);
+        //EventLogger.LogData("Trial Param", "Max Beats", trials[currTrial].beatMax.ToString());
+        //EventLogger.LogData("Trial Param", "Target Score", trials[currTrial].targetScore.ToString());
+        //EventLogger.LogData("Trial Param", "Safe Zone Size", trials[currTrial].colliderSize.ToString());
+        //EventLogger.LogData("Trial Param", "Beat Zone Size", trials[currTrial].beatZoneSize.ToString());
 
         // initiate wheel and eventBoxes
         Wheel.wheelTempo = trials[currTrial].wheelSpeed;
@@ -240,6 +257,7 @@ public class WheelSession : MonoBehaviour
         Target.beatZoneColorDefault = beatZoneColorDefault;
         Wheel.gameLevel = level;
         Wheel.Reset();
+        CreateWheelEvents();
         //Debug.Break();
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepPrecise;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepPrecise * 3;
@@ -248,6 +266,21 @@ public class WheelSession : MonoBehaviour
         tickTimes.Clear();
         tapTimes.Clear();
         tapAngles.Clear();
+
+        // store trial info in data file
+        startDSPtime = AudioSettings.dspTime;
+        EventLogger.StartTrial(startDSPtime);
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Trial Started", timestamp));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Level", trials[currTrial].level.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Wheel Tempo", trials[currTrial].wheelSpeed.ToString()));
+
+        string eventList = string.Join(", ", trials[currTrial].eventList);
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Wheel Event List", eventList));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Max Beats", trials[currTrial].beatMax.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Target Score", trials[currTrial].targetScore.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Safe Zone Size", trials[currTrial].colliderSize.ToString()));
+        EventLogger.Log(LogItem.TrialData(startDSPtime, currTrial, "Beat Zone Size", trials[currTrial].beatZoneSize.ToString()));
 
         Wheel.StartSpin();
 
@@ -258,28 +291,36 @@ public class WheelSession : MonoBehaviour
     {
         // LRS has been triggered
         if (pause) return;
-        EventLogger.LogData("Feedback", "LRS initiated");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Feedback(currTime, currTrial, "LRS initiated"));
+        //EventLogger.LogData("Feedback", "LRS initiated");
+
         pause = true;
         //LRSImage.enabled = true; // Enable the blackout image
         Wheel.StopSpin();
+        AudioListener.pause = true;  // this pauses the DSPtime as well
+
         //controller.TriggerLRS(duration);
         //scoreText.enabled = false;
         //Invoke(nameof(DisableLRS), duration); // Disable after the duration
-        
+
     }
 
     public void ResumeGame()
     {
         // resume after pausing
         if (!pause) return;
-        EventLogger.LogData("Feedback", "LRS ended");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Feedback(currTime, currTrial, "LRS ended"));
+        //EventLogger.LogData("Feedback", "LRS ended");
         pause = false;
         //LRSImage.enabled = false; // Disable the blackout image
 
         //controller.InGameText.SetActive(true);
         //scoreText.enabled = true;
         Wheel.StartSpin();
-        
+        AudioListener.pause = false;  // this pauses the DSPtime as well
+
     }
 
     private void OnClick(InputAction.CallbackContext context)
@@ -305,36 +346,27 @@ public class WheelSession : MonoBehaviour
         {
             if (!pause)
             {
-                Target.Bounce();
-                double tapTime = TimeUtil.fixedTimeAsDouble;
+                //double tapTime = TimeUtil.fixedTimeAsDouble;
+                double tapTimeRaw = AudioSettings.dspTime;
+                double tapTime = tapTimeRaw - startDSPtime;
                 tapTimes.Add(tapTime);
+
+                Target.Bounce();
 
                 // calculate phase angle of tap
                 // Problematic if tapping before first tick - no known time point to determine beat onset
                 // But we could get current wheel angle and calculate angle of next beat...
                 // On the other hand, can you really argue for the angle of taps before the first tick being meaningful in relation to the beat construct in any way?
                 // Maybe if they're ahead of the first tick but close? Then it's a question of accuracy, but still likely before any construct of beat is created 
-                double tapPhase;
-                if (lastEventNum > 0)
-                {
-                    // if tap is after first tick
-                    tapPhase = GetAngle(tapTime, tickTimes[^1]);
-                    tapAngles.Add(tapPhase);
-                }
-                else
-                {
-                    // Tap is before first tick, so count as error
-                    //tapPhase = GetAngle(tapTime, -1d);
-
-                }
-                //tapAngles.Add(tapPhase);
-                //EventLogger.LogData("Debug", "Tap Phase", tapPhase.ToString());
+                double tapPhase = GetAngle(tapTime);
+                tapAngles.Add(tapPhase);
+                
 
                 // Classify the tap
                 if (beatZoneContact && !booped)
                 {
                     // hit in beat zone, score point
-                    EventLogger.LogData("Response", "Hit");
+                    EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Hit", tapPhase));
                     booped = true;
                     if (beatZoneObject != null)
                     {
@@ -360,7 +392,8 @@ public class WheelSession : MonoBehaviour
                 else if (safeZoneContact && !booped)
                 {
                     // hit in safe zone, no score change
-                    EventLogger.LogData("Response", "Safe");
+                    EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Safe", tapPhase));
+                    //EventLogger.LogData("Response", "Safe");
                     booped = true;
                     currLives = defaultLives;
                     UpdateLives(currLives);  // reset lives to max
@@ -376,11 +409,11 @@ public class WheelSession : MonoBehaviour
                     if (safeZoneContact || beatZoneContact)
                     {
                         // in the safeZone or beatZone but not counted as hit
-                        EventLogger.LogData("Response", "Miss (already hit)");
+                        EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Miss (already hit)", tapPhase));
                     }
                     else
                     {
-                        EventLogger.LogData("Response", "Miss");
+                        EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Miss", tapPhase));
                     }
 
                     if (score > 0)
@@ -426,7 +459,9 @@ public class WheelSession : MonoBehaviour
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepSlow;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepSlow * 3;
         trialIsRunning = false;
-        EventLogger.LogData("Trial", "Trial " + (currTrial + 1) + " ended");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.TrialData(currTime, currTrial, "Trial Ended"));
+        //EventLogger.LogData("Trial", "Trial " + (currTrial + 1) + " ended");
         Wheel.Clear();
         Wheel.Resize();
         beatZoneContact = false;
@@ -481,6 +516,93 @@ public class WheelSession : MonoBehaviour
         }
     }
 
+    void RotateWheel(double currTime)
+    {
+        // Rotate at rotSpeed degrees per second
+        float newAngle = (float)((currTime - startDSPtime) * Wheel.wheelTempo * 360f);
+        //Wheel.transform.RotateAround(Wheel.transform.position, Vector3.forward, newAngle);
+        Wheel.transform.rotation = Quaternion.Euler(0, 0, newAngle);
+    }
+    void CreateWheelEvents()
+    {
+        // take the EventBoxes and create a list of beat events with full times
+
+        wheelBeats.Clear();
+        wheelBeats = new();
+
+        double rotSpeed = Wheel.wheelTempo * 360.0f; // rotation in degrees per second
+        double startDelay = rotSpeed * Wheel.startAngle;
+
+        double beatOnset = 0 + startDelay;
+        float currAngle = 0;
+        int j;
+        for (int i = 0; i < eventMax; i++)
+        {
+            j = i % Wheel.boxes.Count;
+            WheelBeat beat = Wheel.boxes[j].wheelBeat;
+            currAngle += beat.beatAngle;  // total angle turned
+            double boopTime = currAngle * rotSpeed;
+
+            double safeStart = boopTime - (colliderSize / 2) * rotSpeed;
+            double safeEnd = boopTime + (colliderSize / 2) * rotSpeed;
+            double beatStart = boopTime - (beatZoneSize / 2) * rotSpeed;
+            double beatEnd = boopTime + (beatZoneSize / 2) * rotSpeed;
+
+            WheelBeatEvent currBeatEvent = new()
+            {
+                EventBox = Wheel.boxes[j],
+                BeatIndex = i,
+                BoopTime = boopTime,
+                SafeZoneStartTime = safeStart,
+                SafeZoneEndTime = safeEnd,
+                BeatZoneStartTime = beatStart,
+                BeatZoneEndTime = beatEnd,
+            };
+            wheelBeats.Add(currBeatEvent);
+            // create wheelBeatEvent
+            //
+        }
+    }
+    
+    void UpdateBeats(double currTime)
+    {
+        for (int i = prevBeatIndex; i < wheelBeats.Count; i++) 
+        {
+            WheelBeatEvent currBeat = wheelBeats[i];
+
+            if (currBeat.SafeZoneStartTime <= currTime && !currBeat.EnteredSafeZone)
+            {
+                WindowContactOn(currBeat);
+                currBeat.EnteredSafeZone = true;
+            }
+            
+            if (currBeat.BeatZoneStartTime <= currTime && !currBeat.EnteredBeatZone)
+            {
+                BeatZoneContactOn(currBeat);
+                currBeat.EnteredBeatZone = true;
+            }
+            
+            if (currBeat.BoopTime <= currTime && !currBeat.Booped)
+            {
+                BeatContact(currBeat);
+                currBeat.Booped = true;
+            }
+
+            if (currBeat.BeatZoneEndTime <= currTime && !currBeat.ExitedBeatZone)
+            {
+                BeatZoneContactOff(currBeat);
+                currBeat.ExitedBeatZone = true;
+            }
+
+            if (currBeat.SafeZoneEndTime <= currTime && !currBeat.ExitedSafeZone)
+            {
+                WindowContactOff(currBeat);
+                currBeat.ExitedSafeZone = true;
+            }
+
+        }
+    }
+    
     void UpdateLevelScore(bool success = true)
     {
         double? meanAngle;  //? makes the double nullable
@@ -581,12 +703,13 @@ public class WheelSession : MonoBehaviour
         GameController.Instance.GameOver();
     }
 
-    public double GetAngle(double tapTime, double prevTick)
+    public double GetAngle(double tapTime)
     {
-        // Important to note this is approximate - we're guessing when the next beat will happen based on math, but can't be 100% certain due to many points of variability
+        // Since we'll know the exact onset times of all beats, we can calculate the next and previous beat times from the raw data instead of relying on an additional parameter
 
-        double nextTick;
-        if (prevTick < 0)
+        double nextTick = wheelBeats[nextBeatIndex].BoopTime;
+        double prevTick;
+        if (prevBeatIndex < 0)  // taps that happen before first tick
         {
             // Special case when the tap occurs before any tick, so we have to estimate both the previous tick time and the next tick time
             // Calculate next tick time using wheel angle and speed (first tick is always at 0 degrees)
@@ -596,16 +719,17 @@ public class WheelSession : MonoBehaviour
             {
                 wheelAngle = 360.0 - wheelAngle;
             }
-            nextTick = tapTime + wheelAngle / (Wheel.wheelTempo * 360.0);
+            //nextTick = tapTime + wheelAngle / (Wheel.wheelTempo * 360.0);
             //EventLogger.LogData("Debug", "Next Tick", nextTick.ToString());
-            prevTick = nextTick - Wheel.eventList[lastEventNum] / (Wheel.wheelTempo * Wheel.SumArray(Wheel.eventList));
+            prevTick = nextTick - Wheel.eventList[lastEventNum] / (Wheel.wheelTempo * Stats.SumArray(Wheel.eventList));
         }
         else
         {
             // Get which interval we're on - we can tell which eventBox was the most recent since it's stored in lastEventNum
             // For taps after the first tick, tested with following parameters: timestep = 0.004, tempo = 0.25, pattern 1,1,1,1, beat zone size = 2
             // All predicted phases were smaller than 1x10E-6
-            nextTick = prevTick + Wheel.eventList[lastEventNum - 1] / (Wheel.wheelTempo * Wheel.SumArray(Wheel.eventList));
+            prevTick = wheelBeats[prevBeatIndex].BoopTime;
+                //nextTick = prevTick + Wheel.eventList[lastEventNum - 1] / (Wheel.wheelTempo * Stats.SumArray(Wheel.eventList));
         }
         double closest = (System.Math.Abs(prevTick - tapTime) <= System.Math.Abs(nextTick - tapTime)) ? prevTick : nextTick;
         double interval = nextTick - prevTick;
@@ -632,14 +756,20 @@ public class WheelSession : MonoBehaviour
 
     //}
 
+    void CheckTriggers(int beatIndex, double currTime)
+    {
+        WheelBeatEvent currBeat = wheelBeats[beatIndex];
+
+    }
+
     void ActivateInputs()
     {
         //Debug.Log("Trigger triggered!");
-        TargetControl.OnContactStart += WindowContactOn;
-        TargetControl.OnContactEnd += WindowContactOff;
-        TargetControl.OnBeatZoneStart += BeatZoneContactOn;
-        TargetControl.OnBeatZoneEnd += BeatZoneContactOff;
-        BeatTicker.OnBeatContact += BeatContact;
+        //TargetControl.OnContactStart += WindowContactOn;
+        //TargetControl.OnContactEnd += WindowContactOff;
+        //TargetControl.OnBeatZoneStart += BeatZoneContactOn;
+        //TargetControl.OnBeatZoneEnd += BeatZoneContactOff;
+        //BeatTicker.OnBeatContact += BeatContact;
 
         var gameplayActions = inputActions.FindActionMap("Wheel");
         triggerAction = gameplayActions.FindAction("Click");
@@ -655,11 +785,11 @@ public class WheelSession : MonoBehaviour
     void DeactivateInputs()
     {
         //Debug.Log("Trigger off");
-        TargetControl.OnContactStart -= WindowContactOn;
-        TargetControl.OnContactEnd -= WindowContactOff;
-        TargetControl.OnBeatZoneStart -= BeatZoneContactOn;
-        TargetControl.OnBeatZoneEnd -= BeatZoneContactOff;
-        BeatTicker.OnBeatContact -= BeatContact;
+        //TargetControl.OnContactStart -= WindowContactOn;
+        //TargetControl.OnContactEnd -= WindowContactOff;
+        //TargetControl.OnBeatZoneStart -= BeatZoneContactOn;
+        //TargetControl.OnBeatZoneEnd -= BeatZoneContactOff;
+        //BeatTicker.OnBeatContact -= BeatContact;
 
         if (triggerAction != null)
         {
@@ -713,9 +843,11 @@ public class WheelSession : MonoBehaviour
 
     //}
 
-    private void WindowContactOn()
+    private void WindowContactOn(WheelBeatEvent beat)
     {
-        EventLogger.LogData("Beat", "Beat safe window start");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Beat(currTime, beat.SafeZoneStartTime, currTrial, beat.BeatIndex, -1, "Safe window start"));
+        //EventLogger.LogData("Beat", "Beat safe window start");
         eventCount++;
 
         safeZoneObject = Target.safeZone;
@@ -724,11 +856,13 @@ public class WheelSession : MonoBehaviour
 
     }
 
-    private void WindowContactOff()
+    private void WindowContactOff(WheelBeatEvent beat)
     {
-        EventLogger.LogData("Beat", "Beat safe window end");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Beat(currTime, beat.SafeZoneEndTime, currTrial, beat.BeatIndex, -1, "Safe window end"));
+        //EventLogger.LogData("Beat", "Beat safe window end");
         safeZoneContact = false;
-        if (!booped)  // If beat passes without a tap, reset score
+        if (!beat.Booped)  // If beat passes without a tap, reset score
         {
             if (score > 0)
             {
@@ -739,33 +873,44 @@ public class WheelSession : MonoBehaviour
         Wheel.ResetBoxColors();  // Reset all EventBox pieces to their default colors, just in case one got colored weird for some reason
     }
 
-    private void BeatContact()
+    private void BeatContact(WheelBeatEvent beat)
     {
-        EventLogger.LogData("Beat", "Beat tick");
-        if (int.Parse(sessionNumber) > 0)
-        {
-            audioSource.PlayOneShot(tickSound);
-        }
-        double time = TimeUtil.fixedTimeAsDouble;
-        tickTimes.Add(time);
-        string lastEventStr = safeZoneObject.name[^2..];
-        lastEventStr = char.IsDigit(lastEventStr[^2]) ? lastEventStr[^2..] : lastEventStr[^1..];  // If only one character is number, just grab that one character
-        lastEventNum = int.Parse(lastEventStr);
+        //EventLogger.LogData("Beat", "Beat tick");
+        double timeRaw = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Beat(timeRaw, beat.BoopTime, currTrial, beat.BeatIndex, -1, "Beat tick"));
+
+        prevBeatIndex++;
+        nextBeatIndex++;
+        //if (int.Parse(sessionNumber) > 0)
+        //{
+        //    audioSource.PlayOneShot(tickSound);
+        //}
+        //double time = TimeUtil.fixedTimeAsDouble;
+        //tickTimes.Add(time);
+        //string lastEventStr = safeZoneObject.name[^2..];
+        //lastEventStr = char.IsDigit(lastEventStr[^2]) ? lastEventStr[^2..] : lastEventStr[^1..];  // If only one character is number, just grab that one character
+        //lastEventNum = int.Parse(lastEventStr);
 
 
 
     }
 
-    private void BeatZoneContactOn()
+    private void BeatZoneContactOn(WheelBeatEvent beat)
     {
-        EventLogger.LogData("Beat", "Beat zone start");
+        //EventLogger.LogData("Beat", "Beat zone start");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Beat(currTime, beat.BeatZoneStartTime, currTrial, beat.BeatIndex, -1, "Beat window start"));
+
         beatZoneContact = true;
         beatZoneObject = Target.beatZone;
     }
 
-    private void BeatZoneContactOff()
+    private void BeatZoneContactOff(WheelBeatEvent beat)
     {
-        EventLogger.LogData("Beat", "Beat zone end");
+        //EventLogger.LogData("Beat", "Beat zone end");
+        double currTime = AudioSettings.dspTime;
+        EventLogger.Log(LogItem.Beat(currTime, beat.BeatZoneEndTime, currTrial, beat.BeatIndex, -1, "Beat window end"));
+
         beatZoneContact = false;
     }
 }
