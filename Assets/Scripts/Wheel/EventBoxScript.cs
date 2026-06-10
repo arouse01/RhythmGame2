@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class EventBox : MonoBehaviour
 {
-    public float angle = 0;
+    public float startAngle = 0;
     public int beatIndex;
     public WheelBeat wheelBeat;
     public float colliderSize = 5;
@@ -13,15 +13,21 @@ public class EventBox : MonoBehaviour
     public float outerRadius = 2f;
     public float innerRadius = 1f;
     public int segments = 40;
-    public GameObject parentObject; // The GameObject to which the segment will be attached
+    //public GameObject parentObject; // The GameObject to which the segment will be attached
     public Material material; // The material to apply to the segment
 
-
+    [SerializeField] private MeshRenderer SafeSpaceRenderer;
+    [SerializeField] private SpriteRenderer BeatMarkerRenderer;
+    [SerializeField] private MeshRenderer BeatZoneRenderer;
 
     private GameObject wheel;  // parent wheel object, for getting radius
     private float circRadius;
     private Transform beatZone;
     private Transform beatMarker;
+
+    private Color safeSpaceColor;
+    private Color beatZoneColor;
+    private Color beatZoneColorFade;
 
     // Start is called before the first frame update
     void Start()
@@ -46,13 +52,13 @@ public class EventBox : MonoBehaviour
         float beatMarkerHeight = h - innerRadius;
         float beatMarkerY = (h + innerRadius) / 2f;
         beatMarker.transform.localScale = new Vector3(beatMarkerWidth, beatMarkerHeight, 0.0f);
-        beatMarker.transform.localPosition = new Vector3(beatMarkerY, 0f, 0.0f);
-        //beatMarker.transform.localPosition = new Vector3(0.0f, h / 2, 0.0f);
+        beatMarker.transform.localPosition = new Vector3(0f, beatMarkerY, 0.0f);
 
         // set angle
         //float angleRad = angle * Mathf.Deg2Rad;
-        transform.Rotate(0.0f, 0.0f, angle, Space.Self);
-        
+        //transform.Rotate(0.0f, 0.0f, startAngle, Space.Self);
+        transform.localRotation = Quaternion.Euler(0, 0, startAngle);
+
         // the localScale gets set to 0.02 after the first round (maybe because of the wheel resizing between rounds?)
         transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
     }
@@ -64,7 +70,7 @@ public class EventBox : MonoBehaviour
         Mesh mesh = new();
 
         float angleStep = wedgeWidth / segments;
-        float baseAngle = 90f;
+        float baseAngle = 0.0f;
         // Vertices array
         Vector3[] vertices = new Vector3[(segments + 1) * 2]; // +2 for the center points
 
@@ -107,10 +113,6 @@ public class EventBox : MonoBehaviour
         //vertices[vertexCount + 1] = new Vector3(0f, 0f, 0f);
 
         //// Calculate angle in radians
-
-
-        
-
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
@@ -119,20 +121,23 @@ public class EventBox : MonoBehaviour
         MeshFilter meshFilter = targetObject.GetComponent<MeshFilter>();
         meshFilter.mesh = mesh;
 
-        MeshCollider meshCollider = targetObject.GetComponent<MeshCollider>();
-        meshCollider.sharedMesh = meshFilter.mesh; // Assign the same mesh
+        //MeshCollider meshCollider = targetObject.GetComponent<MeshCollider>();
+        //meshCollider.sharedMesh = meshFilter.mesh; // Assign the same mesh
 
         //MeshRenderer meshRenderer = targetObject.GetComponent<MeshRenderer>();
         //meshRenderer.material = material;
 
     }
 
-
     public void Initialize(WheelBeat beat)
     {
         wheelBeat = beat;
-        angle = beat.beatAngle;
+        startAngle = beat.beatAngle;
         beatIndex = beat.beatNumber;
+
+        beatZone = transform.Find("BeatZone");
+        beatMarker = transform.Find("BeatMarker");
+
     }
     
     //void AttachToParent()
@@ -151,12 +156,30 @@ public class EventBox : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void ResetColors(Color safeSpaceColor, Color beatZoneColor)
+    public void InitializeColors(Color safeColor, Color beatColor)
     {
-        beatZone = transform.Find("BeatZone");
-        transform.GetComponent<MeshRenderer>().material.color = safeSpaceColor;
-        beatZone.GetComponent<MeshRenderer>().material.color = beatZoneColor;
+        safeSpaceColor = safeColor;
+        beatZoneColor = beatColor;
+        beatZoneColorFade = beatZoneColor;
+        beatZoneColorFade.a = .5f;
+    }
+
+    public void ResetColors()
+    {
+        //beatZone = transform.Find("BeatZone");
+        SafeSpaceRenderer.material.color = safeSpaceColor;
+        BeatZoneRenderer.material.color = beatZoneColor;
     }
     
-   
+    public void Bop(Color bopColor)
+    {
+        BeatZoneRenderer.material.color = bopColor;
+    }
+
+    public void BopSafe()
+    {
+        BeatZoneRenderer.material.color = beatZoneColorFade;
+    }
+
+
 }

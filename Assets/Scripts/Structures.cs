@@ -37,6 +37,7 @@ public struct WheelBeat
 {
     public int beatNumber;
     public float beatAngle;
+    public float interval;
     //public GameObject eventBox;
 }
 
@@ -47,6 +48,7 @@ public class WheelBeatEvent
     public int BeatIndex;
     public double BoopTime;  // in dsptime, relative to game start time
     public bool Booped;  // Passed boop line and triggered it
+    public bool BoopSet; // boop event has been scheduled
     public bool Bopped;  // User hit the beat
     public double SafeZoneStartTime;
     public bool EnteredSafeZone;

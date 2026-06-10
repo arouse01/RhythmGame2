@@ -76,22 +76,24 @@ public class WheelControl : MonoBehaviour
         }
     }
     
-    public void Reset()
+    public void ResetWheel()
     {
         pause = true;
         // Place event boxes first because their size/position is linked to the wheel size/position, so resizing the wheel after will resize the event boxes
         PlaceEventBoxes();
-        //boxes = FindObjectsByType<EventBox>();  // Updated from FindObjectsOfType (now deprecated)
+        
         Resize();
-        transform.rotation = Quaternion.identity;  // Reset wheel position to zero  
+        //transform.rotation = Quaternion.identity;  // Reset wheel position to zero  
         //float startAngle;
         if (wheelTempo == 0) {startAngle = 0;}
         else if (wheelTempo < 0.01f) {startAngle = 2.5f;}
         else if (wheelTempo < 0.1f) {startAngle = 5;}
         else {startAngle = 10;}
-            
-            
-        transform.Rotate(0.0f, 0.0f, -startAngle, Space.Self);  // Set starting point to just before the first beat
+
+
+        //transform.Rotate(0.0f, 0.0f, -startAngle, Space.Self);  // Set starting point to just before the first beat
+
+        transform.rotation = Quaternion.Euler(0, 0, -startAngle);
     }
 
     void CreateCircleMesh()
@@ -167,7 +169,7 @@ public class WheelControl : MonoBehaviour
         float intervalSum = Stats.SumArray(eventList);
         float angleStep = 360 / intervalSum;
 
-        float currAngle = 90;  
+        float currAngle = 0;  
         int j = 0;
         boxes?.Clear();
         boxes = new();
@@ -179,13 +181,15 @@ public class WheelControl : MonoBehaviour
             WheelBeat currBeat = new()
             {
                 beatNumber = j,
-                beatAngle = currAngle
+                beatAngle = currAngle,
+                interval = i * angleStep
             };
             // Instantiate the prefab at the calculated position
             float wheelY = transform.position[1];
             EventBox newObject = Instantiate(eventBox, new Vector2(0, wheelY), Quaternion.identity);
             newObject.name = "EventBox_" + j.ToString();
             newObject.Initialize(currBeat);
+            newObject.InitializeColors(safeZoneColorDefault, beatZoneColorDefault);
             //newObject.GetComponent<EventBox>().angle = currAngle;
             //newObject.GetComponent<EventBox>().beatIndex = j;
             newObject.transform.parent = transform;
@@ -193,26 +197,30 @@ public class WheelControl : MonoBehaviour
             currAngle -= i * angleStep; // negative because the wheel spins counterclockwise
 
             // set eventBox collider size too
-            newObject.GetComponent<EventBox>().colliderSize = colliderSize;
-            newObject.GetComponent<EventBox>().beatZoneSize = beatZoneSize;
+            newObject.colliderSize = colliderSize;
+            newObject.beatZoneSize = beatZoneSize;
 
             // set colors
-            newObject.GetComponent<EventBox>().ResetColors(safeZoneColorDefault, beatZoneColorDefault);
+            newObject.ResetColors();
 
             boxes.Add(newObject);
         }
         
     }
 
-    public void ResetBoxColors()
+    public void ResetBoxColors(EventBox box)
+    {
+        box.ResetColors();
+    }
+
+    public void ResetAllBoxColors()
     {
         foreach (EventBox box in boxes)
         {
-            box.ResetColors(safeZoneColorDefault, beatZoneColorDefault);
+            box.ResetColors();
         }
     }
-    
-    
+
     public double GetRotation()
     {
         return transform.eulerAngles.z;

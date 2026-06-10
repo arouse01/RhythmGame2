@@ -14,6 +14,8 @@ public class WheelSession : MonoBehaviour
     public TargetControl Target;
     //public Image LRSImage;
 
+    [SerializeField] private AudioManager audioManager;  // more centralized audio manager
+
     //private GameObject LRSDurationField;
     //private GameObject TargetWidthField;
     double startDSPtime;
@@ -43,11 +45,11 @@ public class WheelSession : MonoBehaviour
     private int currLives; // number of lives left
     private int defaultLives; // number of errors allowed
     private int level;  // current level
-    private bool booped;  // whether the current eventBox has been hit
-    private int eventCount;  // total number of contact events (beats)
+    private bool bopped;  // whether the current eventBox has been hit
+    //private int eventCount;  // total number of contact events (beats)
     private int prevBeatIndex;
     private int nextBeatIndex;
-    private AudioSource audioSource;
+    //private AudioSource audioSource;
     private int numTrials;  // number of trials
     private int currTrial; // index of current trial
     private int eventMax; // max beats to present
@@ -58,8 +60,9 @@ public class WheelSession : MonoBehaviour
     private float targetZoneWidth = 0.25f; // width of the target zone around the avatar
     private float colliderSize;  // width of the eventBox collider
     private float beatZoneSize; // width of the beatZone collider
-    private Collider beatZoneObject;
-    private Collider safeZoneObject;
+    //private Collider beatZoneObject;
+    //private Collider safeZoneObject;
+    public EventBox currEventBox;
 
     private List<WheelBeatEvent> wheelBeats;
     private List<double> tickTimes = new();
@@ -76,9 +79,9 @@ public class WheelSession : MonoBehaviour
     private InputAction triggerAction;
     private InputAction cancelAction;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        //TODO: should the gameType variable be hardcoded like this?
         GameType = "Wheel";
         // get refs to objects from GameController
         gameOver = false;
@@ -86,14 +89,14 @@ public class WheelSession : MonoBehaviour
 
         trialIsRunning = false;
         score = 0;
-        eventCount = 0;
-        booped = false;
+        //eventCount = 0;
+        bopped = false;
         pause = false;
 
         beatZoneColorFade = beatZoneColorDefault;
         beatZoneColorFade.a = .5f;
 
-        audioSource = GetComponent<AudioSource>();
+        //audioSource = GetComponent<AudioSource>();
         Wheel.gameObject.SetActive(false);
         Target.gameObject.SetActive(false);
 
@@ -104,19 +107,17 @@ public class WheelSession : MonoBehaviour
     {
         if (trialIsRunning)
         {
-            currDSPtime = AudioSettings.dspTime - startDSPtime;
+            currDSPtime = (AudioSettings.dspTime - startDSPtime);
+            double displayTime = currDSPtime + Time.smoothDeltaTime * 0.5; // We're inflating currDSPtime a tiny bit (based on current actual framerate) to account for visual lag introduced by only updating at game framerate. 
 
             if (nextBeatIndex >= eventMax)
             {
                 EndTrial(false);
             }
 
-            //SpawnNewBeats(currDSPtime);
-            RotateWheel(currDSPtime);
+            RotateWheel(displayTime);
 
-            UpdateBeats(currDSPtime);
-
-            //RemoveExpiredBeats(currDSPtime);
+            UpdateBeats(displayTime);
 
         }
 
@@ -148,7 +149,6 @@ public class WheelSession : MonoBehaviour
         cfg.ShowLRS(false);
 
         // read parameter file
-        // TODO: should the gameType variable be hardcoded like this?
         trials = ParameterLoader.LoadWheelTrialParameters(phaseParamPath, sessionFile);
         
         // Get number of trials
@@ -197,8 +197,8 @@ public class WheelSession : MonoBehaviour
 
         score = 0;
         trialIsRunning = false;
-        eventCount = 0;
-        booped = false;
+        //eventCount = 0;
+        bopped = false;
         pause = false;
 
         defaultLives = 3;
@@ -238,11 +238,13 @@ public class WheelSession : MonoBehaviour
         colliderSize = trials[currTrial].colliderSize;
         beatZoneSize = trials[currTrial].beatZoneSize;
         level = trials[currTrial].level;
-        eventCount = 0;
+        //eventCount = 0;
         score = 0;
         mistakeCount = 0;
         lastEventNum = 0;
         currLives = defaultLives;
+        prevBeatIndex = 0;
+        nextBeatIndex = 0;
         GameController.Instance.ShowLifeMarkers(true);
         UpdateLives(currLives);
         GameController.Instance.UpdateMessage("");
@@ -256,7 +258,7 @@ public class WheelSession : MonoBehaviour
         Wheel.beatZoneColorDefault = beatZoneColorDefault;
         Target.beatZoneColorDefault = beatZoneColorDefault;
         Wheel.gameLevel = level;
-        Wheel.Reset();
+        Wheel.ResetWheel();
         CreateWheelEvents();
         //Debug.Break();
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepPrecise;
@@ -358,20 +360,25 @@ public class WheelSession : MonoBehaviour
                 // But we could get current wheel angle and calculate angle of next beat...
                 // On the other hand, can you really argue for the angle of taps before the first tick being meaningful in relation to the beat construct in any way?
                 // Maybe if they're ahead of the first tick but close? Then it's a question of accuracy, but still likely before any construct of beat is created 
-                double tapPhase = GetAngle(tapTime);
+                double tapPhase = GetPhaseAngle(tapTime);
                 tapAngles.Add(tapPhase);
                 
 
                 // Classify the tap
-                if (beatZoneContact && !booped)
+                if (beatZoneContact && !bopped)
                 {
                     // hit in beat zone, score point
                     EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Hit", tapPhase));
-                    booped = true;
-                    if (beatZoneObject != null)
-                    {
-                        beatZoneObject.GetComponent<Renderer>().material.color = beatZoneColorFlash;
-                    }
+                    int closestIndex = (tapPhase > 0) ? prevBeatIndex : nextBeatIndex;
+                    wheelBeats[closestIndex].Bopped = true;
+                    bopped = true;
+                    currEventBox.Bop(beatZoneColorFlash);
+                    
+                    //if (beatZoneObject != null)
+                    //{
+                    //    currEventBox.Bop(beatZoneColorFlash);
+                    //    //beatZoneObject.GetComponent<Renderer>().material.color = beatZoneColorFlash;
+                    //}
 
                     score++;
                     currLives = defaultLives;
@@ -380,28 +387,32 @@ public class WheelSession : MonoBehaviour
                     // TODO: placeholder for calculating accuracy
 
                     GameController.Instance.UpdateScore(score);
-                    audioSource.PlayOneShot(goodHitSound);
+                    PlayPlayerSound(goodHitSound);
 
                     if (score >= targetScore)
                     {
-                        audioSource.PlayOneShot(bridgeSound);
+                        PlayPlayerSound(bridgeSound);
                         EndTrial();
                     }
 
                 }
-                else if (safeZoneContact && !booped)
+                else if (safeZoneContact && !bopped)
                 {
                     // hit in safe zone, no score change
                     EventLogger.Log(LogItem.Response(tapTimeRaw, currTrial, 0, "Safe", tapPhase));
                     //EventLogger.LogData("Response", "Safe");
-                    booped = true;
+                    int closestIndex = (tapPhase > 0) ? prevBeatIndex : nextBeatIndex;
+                    wheelBeats[closestIndex].Bopped = true;
+                    bopped = true;
                     currLives = defaultLives;
                     UpdateLives(currLives);  // reset lives to max
-                    safeZoneObject.transform.Find("BeatZone").GetComponent<Renderer>().material.color = beatZoneColorFade;
+
+                    currEventBox.BopSafe();
+                    //safeZoneObject.transform.Find("BeatZone").GetComponent<Renderer>().material.color = beatZoneColorFade;
 
 
 
-                    //audioSource.PlayOneShot(goodHitSound);
+                    //PlayPlayerSound(goodHitSound);
 
                 }
                 else
@@ -429,7 +440,7 @@ public class WheelSession : MonoBehaviour
 
                     // TODO: placeholder for accuracy update
 
-                    //audioSource.PlayOneShot(badHitSound, 0.5f);
+                    //PlayPlayerSound(badHitSound, 0.5f);
                 }
 
                 //if (currLives <= 0)
@@ -456,6 +467,7 @@ public class WheelSession : MonoBehaviour
     void EndTrial(bool success = true)
     {
         Wheel.StopSpin();
+        audioManager.StopAll();
         TimeUtil.fixedDeltaTime = GameController.Instance.timeStepSlow;
         TimeUtil.maximumDeltaTime = GameController.Instance.timeStepSlow * 3;
         trialIsRunning = false;
@@ -466,7 +478,7 @@ public class WheelSession : MonoBehaviour
         Wheel.Resize();
         beatZoneContact = false;
         safeZoneContact = false;
-        booped = false;
+        bopped = false;
 
         // pause so the score screen doesn't get skipped
         pause = true;
@@ -519,34 +531,41 @@ public class WheelSession : MonoBehaviour
     void RotateWheel(double currTime)
     {
         // Rotate at rotSpeed degrees per second
-        float newAngle = (float)((currTime - startDSPtime) * Wheel.wheelTempo * 360f);
+        //float currAngle = Wheel.transform.eulerAngles.z;
+        //if (currAngle % 360 < 1)
+        //{
+        //    Debug.Log($"Time: {currTime}, Angle: {currAngle}");
+        //}
+        float newAngle = (float)((currTime) * Wheel.wheelTempo * 360f - Wheel.startAngle);
         //Wheel.transform.RotateAround(Wheel.transform.position, Vector3.forward, newAngle);
         Wheel.transform.rotation = Quaternion.Euler(0, 0, newAngle);
+        
     }
+
     void CreateWheelEvents()
     {
         // take the EventBoxes and create a list of beat events with full times
+        // Wheel has just been reset and rotated to its starting position, so we can use the current rotation to calculate onset times
 
         wheelBeats.Clear();
         wheelBeats = new();
 
         double rotSpeed = Wheel.wheelTempo * 360.0f; // rotation in degrees per second
-        double startDelay = rotSpeed * Wheel.startAngle;
+        float currAngle = Wheel.startAngle;
+        //double startDelay = Wheel.startAngle / rotSpeed;
 
-        double beatOnset = 0 + startDelay;
-        float currAngle = 0;
         int j;
         for (int i = 0; i < eventMax; i++)
         {
             j = i % Wheel.boxes.Count;
             WheelBeat beat = Wheel.boxes[j].wheelBeat;
-            currAngle += beat.beatAngle;  // total angle turned
-            double boopTime = currAngle * rotSpeed;
+            
+            double boopTime = (currAngle / rotSpeed);
 
-            double safeStart = boopTime - (colliderSize / 2) * rotSpeed;
-            double safeEnd = boopTime + (colliderSize / 2) * rotSpeed;
-            double beatStart = boopTime - (beatZoneSize / 2) * rotSpeed;
-            double beatEnd = boopTime + (beatZoneSize / 2) * rotSpeed;
+            double safeStart = boopTime - (colliderSize / 2) / rotSpeed;
+            double safeEnd = boopTime + (colliderSize / 2) / rotSpeed;
+            double beatStart = boopTime - (beatZoneSize / 2) / rotSpeed;
+            double beatEnd = boopTime + (beatZoneSize / 2) / rotSpeed;
 
             WheelBeatEvent currBeatEvent = new()
             {
@@ -559,14 +578,17 @@ public class WheelSession : MonoBehaviour
                 BeatZoneEndTime = beatEnd,
             };
             wheelBeats.Add(currBeatEvent);
-            // create wheelBeatEvent
-            //
+            
+            currAngle += beat.interval;  // total angle turned, regardless of direction (since there's no direction change)
         }
     }
     
     void UpdateBeats(double currTime)
     {
-        for (int i = prevBeatIndex; i < wheelBeats.Count; i++) 
+        int beatBuffer = 3;  // How far away is considered "nearby" when looking at adjacent beats - that way we only process the nearest instead of all and still retain enough in the past to capture leaving the safe zone
+        int iStart = prevBeatIndex > beatBuffer ? prevBeatIndex - beatBuffer : 0;
+        int iEnd = prevBeatIndex + beatBuffer > wheelBeats.Count ? wheelBeats.Count : prevBeatIndex + beatBuffer;
+        for (int i = iStart; i <= iEnd; i++) 
         {
             WheelBeatEvent currBeat = wheelBeats[i];
 
@@ -598,6 +620,14 @@ public class WheelSession : MonoBehaviour
             {
                 WindowContactOff(currBeat);
                 currBeat.ExitedSafeZone = true;
+            }
+
+            if ((currBeat.BoopTime - 2) <= currTime && !currBeat.BoopSet)
+            {
+                currBeat.BoopSet = true;
+                double boopTime = currBeat.BoopTime + startDSPtime;
+                Debug.Log($"Scheduling boop at {currBeat.BoopTime}");
+                ScheduleBoopAudio(boopTime);
             }
 
         }
@@ -703,22 +733,22 @@ public class WheelSession : MonoBehaviour
         GameController.Instance.GameOver();
     }
 
-    public double GetAngle(double tapTime)
+    public double GetPhaseAngle(double tapTime)
     {
         // Since we'll know the exact onset times of all beats, we can calculate the next and previous beat times from the raw data instead of relying on an additional parameter
 
         double nextTick = wheelBeats[nextBeatIndex].BoopTime;
         double prevTick;
-        if (prevBeatIndex < 0)  // taps that happen before first tick
+        if (nextBeatIndex == 0)  // taps that happen before first tick
         {
             // Special case when the tap occurs before any tick, so we have to estimate both the previous tick time and the next tick time
-            // Calculate next tick time using wheel angle and speed (first tick is always at 0 degrees)
-            double wheelAngle = Wheel.GetRotation();
-            // To start the wheel is usually rotated a bit before the first tick, so rotation just below 360. Convert to 
-            if (wheelAngle > 270.0)
-            {
-                wheelAngle = 360.0 - wheelAngle;
-            }
+            //// Calculate next tick time using wheel angle and speed (first tick is always at 0 degrees)
+            //double wheelAngle = Wheel.GetRotation();
+            //// To start the wheel is usually rotated a bit before the first tick, so rotation just below 360. Convert to 
+            //if (wheelAngle > 270.0)
+            //{
+            //    wheelAngle = 360.0 - wheelAngle;
+            //}
             //nextTick = tapTime + wheelAngle / (Wheel.wheelTempo * 360.0);
             //EventLogger.LogData("Debug", "Next Tick", nextTick.ToString());
             prevTick = nextTick - Wheel.eventList[lastEventNum] / (Wheel.wheelTempo * Stats.SumArray(Wheel.eventList));
@@ -819,6 +849,17 @@ public class WheelSession : MonoBehaviour
         GameController.Instance.OnGameResume -= ResumeGame;
     }
 
+    void ScheduleBoopAudio(double dspTime)
+    {
+        
+        audioManager.ScheduleBeat(tickSound, dspTime);
+        
+    }
+
+    void PlayPlayerSound(AudioClip clip)
+    {
+        audioManager.PlayImmediate(clip);
+    }
 
     //private void OnDisable()
     //{
@@ -848,11 +889,12 @@ public class WheelSession : MonoBehaviour
         double currTime = AudioSettings.dspTime;
         EventLogger.Log(LogItem.Beat(currTime, beat.SafeZoneStartTime, currTrial, beat.BeatIndex, -1, "Safe window start"));
         //EventLogger.LogData("Beat", "Beat safe window start");
-        eventCount++;
+        //eventCount++;
 
-        safeZoneObject = Target.safeZone;
+        //safeZoneObject = Target.safeZone;
+        currEventBox = beat.EventBox;
         safeZoneContact = true;
-        booped = false;
+        bopped = false;
 
     }
 
@@ -862,7 +904,7 @@ public class WheelSession : MonoBehaviour
         EventLogger.Log(LogItem.Beat(currTime, beat.SafeZoneEndTime, currTrial, beat.BeatIndex, -1, "Safe window end"));
         //EventLogger.LogData("Beat", "Beat safe window end");
         safeZoneContact = false;
-        if (!beat.Booped)  // If beat passes without a tap, reset score
+        if (!beat.Bopped)  // If beat passes without a tap, reset score
         {
             if (score > 0)
             {
@@ -870,7 +912,8 @@ public class WheelSession : MonoBehaviour
                 GameController.Instance.UpdateScore(score);
             }
         }
-        Wheel.ResetBoxColors();  // Reset all EventBox pieces to their default colors, just in case one got colored weird for some reason
+        beat.EventBox.ResetColors();  // Reset all EventBox pieces to their default colors, just in case one got colored weird for some reason
+        currEventBox = null;
     }
 
     private void BeatContact(WheelBeatEvent beat)
@@ -878,7 +921,8 @@ public class WheelSession : MonoBehaviour
         //EventLogger.LogData("Beat", "Beat tick");
         double timeRaw = AudioSettings.dspTime;
         EventLogger.Log(LogItem.Beat(timeRaw, beat.BoopTime, currTrial, beat.BeatIndex, -1, "Beat tick"));
-
+        double wheelAngle = Wheel.transform.eulerAngles.z;
+        //Debug.Log($"Beat {beat.BeatIndex}, Wheel angle is {wheelAngle}");
         prevBeatIndex++;
         nextBeatIndex++;
         //if (int.Parse(sessionNumber) > 0)
@@ -902,7 +946,7 @@ public class WheelSession : MonoBehaviour
         EventLogger.Log(LogItem.Beat(currTime, beat.BeatZoneStartTime, currTrial, beat.BeatIndex, -1, "Beat window start"));
 
         beatZoneContact = true;
-        beatZoneObject = Target.beatZone;
+        //beatZoneObject = Target.beatZone;
     }
 
     private void BeatZoneContactOff(WheelBeatEvent beat)
