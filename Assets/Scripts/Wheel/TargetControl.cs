@@ -82,8 +82,8 @@ public class TargetControl : MonoBehaviour
         // Assign the mesh to the MeshFilter
         meshFilter.mesh = mesh;
 
-        MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
-        meshCollider.sharedMesh = meshFilter.mesh; // Assign the same mesh
+        //MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
+        //meshCollider.sharedMesh = meshFilter.mesh; // Assign the same mesh
     }
 
     // Build triangle avatar

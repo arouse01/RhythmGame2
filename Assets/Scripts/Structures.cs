@@ -43,6 +43,13 @@ public struct WheelBeat
 
 public class WheelBeatEvent
 {
+    /* 
+     * Set as class so that setting a variable to a specific WheelBeatEvent, e.g. 
+     *      WheelBeatEvent currBeat = wheelBeats[nearestIndex];
+     * just sets a reference to the WheelBeatEvent so that
+     *      currBeat.Bopped = true;
+     * affects the original WheelBeatEvent
+     */
     public WheelBeat Beat;
     public EventBox EventBox;
     public int BeatIndex;

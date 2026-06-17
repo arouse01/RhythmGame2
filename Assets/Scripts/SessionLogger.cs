@@ -10,7 +10,7 @@ using System.Linq;
 using TimeUtil = UnityEngine.Time;
 using UnityEngine.Audio;
 
-public enum LogEventType
+public enum EventType
 {
     Game,  // information about the game itself (version, app name, which game)
     Session,  // Session information like animal, 
@@ -20,12 +20,12 @@ public enum LogEventType
     Response  // user-initiated event information
 }
 
-public struct LogItem
+public struct Entry
 {
     public double RawDSPTime;  // raw dspTime, not referenced to session or trial start
     public double? ScheduledTime;
 
-    public LogEventType Type;
+    public EventType Type;
 
     public int? TrialIndex;
 
@@ -36,33 +36,33 @@ public struct LogItem
     public string EventMessage;
     public string EventValue;
 
-    public static LogItem GameData(double rawDspTime, string eventMessage, string eventValue)
+    public static Entry Game(double rawDspTime, string eventMessage, string eventValue)
     {
-        return new LogItem
+        return new Entry
         {
             RawDSPTime = rawDspTime,
-            Type = LogEventType.Game,
+            Type = EventType.Game,
             EventMessage = eventMessage,
             EventValue = eventValue
         };
     }
 
-    public static LogItem SessionData(double rawDspTime, string eventMessage, string eventValue)
+    public static Entry Session(double rawDspTime, string eventMessage, string eventValue)
     {
-        return new LogItem
+        return new Entry
         {
             RawDSPTime = rawDspTime,
-            Type = LogEventType.Session,
+            Type = EventType.Session,
             EventMessage = eventMessage,
             EventValue = eventValue
         };
     }
 
-    public static LogItem TrialData(double rawDspTime, int trialIndex, string message, string value = "")
+    public static Entry Trial(double rawDspTime, int trialIndex, string message, string value = "")
     {
-        return new LogItem
+        return new Entry
         {
-            Type = LogEventType.TrialParam,
+            Type = EventType.TrialParam,
             RawDSPTime = rawDspTime,
             TrialIndex = trialIndex,
             EventMessage = message,
@@ -70,12 +70,12 @@ public struct LogItem
         };
     }
 
-    public static LogItem Response(double rawDspTime, int trialIndex, int lane, string message, double phase)
+    public static Entry Response(double rawDspTime, int trialIndex, int lane, string message, double phase)
     {
         
-        return new LogItem
+        return new Entry
         {
-            Type = LogEventType.Response,
+            Type = EventType.Response,
             RawDSPTime = rawDspTime,
             TrialIndex = trialIndex,
             Lane = lane,
@@ -84,12 +84,12 @@ public struct LogItem
         };
     }
 
-    public static LogItem Beat(double rawDspTime, double scheduledTime, int trialIndex, int beatIndex, int lane, string message)
+    public static Entry Beat(double rawDspTime, double scheduledTime, int trialIndex, int beatIndex, int lane, string message)
     {
 
-        return new LogItem
+        return new Entry
         {
-            Type = LogEventType.Beat,
+            Type = EventType.Beat,
             RawDSPTime = rawDspTime,
             ScheduledTime = scheduledTime,
             TrialIndex = trialIndex,
@@ -99,12 +99,12 @@ public struct LogItem
         };
     }
 
-    public static LogItem Feedback(double rawDspTime, int trialIndex, string message)
+    public static Entry Feedback(double rawDspTime, int trialIndex, string message)
     {
 
-        return new LogItem
+        return new Entry
         {
-            Type = LogEventType.Feedback,
+            Type = EventType.Feedback,
             RawDSPTime = rawDspTime,
             TrialIndex = trialIndex,
             EventMessage = message
@@ -113,7 +113,7 @@ public struct LogItem
 
 }
 
-public static class EventLogger
+public static class Logger
 {
     // central handler for logging session events
 
@@ -166,14 +166,14 @@ public static class EventLogger
     }
 
     
-    public static void Log(LogItem log)
+    public static void Log(Entry log)
     {
         //string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
         double sessionTime = log.RawDSPTime - sessionStartDspTime;
         double trialTime;
-        if (log.Type == LogEventType.Game)
+        if (log.Type == EventType.Game || log.Type == EventType.Session)
         {
-            trialTime = 0;
+            trialTime = 0;  // Game data and session data don't have a specific trial time because they happen outside of trials
         }
         else
         {

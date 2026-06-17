@@ -112,7 +112,7 @@ public class GameController : MonoBehaviour
             }
         }
 
-        debugMode = true;
+        debugMode = false;
 
         TimeUtil.fixedDeltaTime = timeStepSlow;
         TimeUtil.maximumDeltaTime = timeStepSlow * 3;
@@ -130,12 +130,12 @@ public class GameController : MonoBehaviour
 
         // prefsPanel
         prefsPanel = UserInputObject.transform.Find("InputPanels/PrefsPanel").gameObject;
-        PhaseParamFolderField = prefsPanel.transform.Find("UserInputPrefs/PhaseParamFolderRow/PhaseParamFolderField").gameObject;
-        SaveFolderField = prefsPanel.transform.Find("UserInputPrefs/SaveFolderRow/SaveFolderField").gameObject;
-        LRSDurationField = prefsPanel.transform.Find("UserInputPrefs/OtherFieldsRow/LRSDurField").gameObject;
-        TargetWidthField = prefsPanel.transform.Find("UserInputPrefs/OtherFieldsRow/TargetSizeField").gameObject;
+        PhaseParamFolderField = prefsPanel.transform.Find("PrefsScroll/Viewport/UserInputPrefs/PhaseParamFolderRow/PhaseParamFolderField").gameObject;
+        SaveFolderField = prefsPanel.transform.Find("PrefsScroll/Viewport/UserInputPrefs/SaveFolderRow/SaveFolderField").gameObject;
+        LRSDurationField = prefsPanel.transform.Find("PrefsScroll/Viewport/UserInputPrefs/OtherFieldsRow/LRSDurField").gameObject;
+        TargetWidthField = prefsPanel.transform.Find("PrefsScroll/Viewport/UserInputPrefs/OtherFieldsRow/TargetSizeField").gameObject;
         prefsButton = UserInputObject.transform.Find("BottomText/PrefsButton").gameObject;
-        prefWarningText = prefsPanel.transform.Find("UserInputPrefs/WarningTextRow/PrefWarningText").gameObject;
+        prefWarningText = prefsPanel.transform.Find("WarningTextRow/PrefWarningText").gameObject;
 
         // 
         gameOverPanel = UserInputObject.transform.Find("InputPanels/EndPanel").gameObject;
@@ -475,12 +475,12 @@ public class GameController : MonoBehaviour
         string playerInfoText = playerInfoField.GetComponent<TMP_InputField>().text;
         string attentionText = attentionField.GetComponent<TMP_InputField>().text;
         string generalNotesText = postNotesField.GetComponent<TMP_InputField>().text;
-        EventLogger.Log(LogItem.SessionData(currTime, "Player Information", playerInfoText));
-        EventLogger.Log(LogItem.SessionData(currTime, "Attention", attentionText));
-        EventLogger.Log(LogItem.SessionData(currTime, "Postsession Notes", generalNotesText));
+        Logger.Log(Entry.Session(currTime, "Player Information", playerInfoText));
+        Logger.Log(Entry.Session(currTime, "Attention", attentionText));
+        Logger.Log(Entry.Session(currTime, "Postsession Notes", generalNotesText));
 
         gameOverPanel.SetActive(false);
-        EventLogger.StopLog();
+        Logger.StopLog();
         MainMenuStart();
     }
 
@@ -617,7 +617,7 @@ public class GameController : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        EventLogger.StopLog();
+        Logger.StopLog();
     }
 
 }
