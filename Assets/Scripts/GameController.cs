@@ -154,9 +154,19 @@ public class GameController : MonoBehaviour
         levelScoreObject = InGameText.transform.Find("Level Score").gameObject;
 
         // load game and level choices from last selection
-        
+
+        // if this is the first time the game is being started
+        string paramPath = PlayerPrefs.GetString("PhaseParamFolder");
+        if (string.IsNullOrEmpty(paramPath))
+        {
+            string basePath = System.AppDomain.CurrentDomain.BaseDirectory;
+            string defaultSessionPath = Path.Combine(basePath, "PhaseParams");
+            //Debug.Log(basePath);
+            PlayerPrefs.SetString("PhaseParamFolder", defaultSessionPath);
+        }
         //parameters.SetPhaseParamPath(phaseParamPath);
         //OnGameDropdownChanged(PlayerPrefs.GetInt("GameTypeIndex"));
+
         OnGameDropdownChanged(0);
         OnLevelDropdownChanged(0);
         gameDropdown.onValueChanged.AddListener(OnGameDropdownChanged);
@@ -368,21 +378,34 @@ public class GameController : MonoBehaviour
 
         levelDropdown.ClearOptions();
         string phaseParamPath = PlayerPrefs.GetString("PhaseParamFolder");
-        availableLevels = ParameterLoader.GetAvailableLevels(GameType, phaseParamPath);
+        //Debug.Log("Parameter Path:" + phaseParamPath);
 
-        // from availableLevels build the list of names
-        List<string> levelNames = new();
-
-        foreach (var level in availableLevels)
+        if (phaseParamPath != null)
         {
-            levelNames.Add(level.displayName);
+            availableLevels = ParameterLoader.GetAvailableLevels(GameType, phaseParamPath);
+
+            // from availableLevels build the list of names
+            List<string> levelNames = new();
+
+            foreach (var level in availableLevels)
+            {
+                levelNames.Add(level.displayName);
+            }
+
+
+            levelDropdown.AddOptions(levelNames);
+
+            levelParameterFile = availableLevels[index].fileName;
+            //Debug.Log("Selected index: " + index);
+
+        }
+        else
+        {
+
         }
 
-        
-        levelDropdown.AddOptions(levelNames);
 
-        levelParameterFile = availableLevels[index].fileName;
-        //Debug.Log("Selected index: " + index);
+        
     }
 
     void OnLevelDropdownChanged(int index)

@@ -414,7 +414,7 @@ public class ParameterLoader
                 beatOut.isRest = true;
             }
 
-            while (value.Contains('^'))  // there should only be one 'r' but additional ones don't change whether it's a rest or not
+            while (value.Contains('^'))  //
             {
                 beatOut.beatLane = 1;
             }
